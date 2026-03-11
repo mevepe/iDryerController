@@ -307,7 +307,7 @@ language, will not be displayed
 #endif
 
 #define KASYAK_FINDER 1
-#define DRY_LOGS 1
+#define DRY_LOGS 0
 #define SERVO_LOGS 0
 #define AUTOPID_LOGS 1
 

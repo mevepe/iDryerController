@@ -32,7 +32,7 @@ uint16_t iDryer::getPulseWidth() const
 
 bool iDryer::IsHeatingAllowed() const
 {
-  return (state == DRY || state == STORAGE || state == AUTOPID) && _dimmer >= HEATER_MIN && _dimmer < HEATER_MAX;
+  return (state == DRY || state == STORAGE || state == AUTOPID) && _dimmer >= HEATER_MIN && _dimmer < HEATER_OFF;
 }
 
 bool iDryer::getData()
