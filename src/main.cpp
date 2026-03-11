@@ -164,7 +164,6 @@ const byte encBut = A3;
 volatile static byte PCMask;
 volatile byte flagISR = 0;
 
-bool timer1_dimmerFlag = false;
 uint8_t timer2_aFlag = 0;
 uint8_t menuSize = 0;
 unsigned long oldTime = 0;
@@ -354,29 +353,23 @@ void servoTest()
 }
 
 #ifdef v220V
-void isr()
+void on_zero_crossing()
 {
     PORTD &= ~(1 << DIMMER_PIN);
     if ((state == DRY || state == STORAGE || state == AUTOPID) && servo.getState() != MOVE && dimmer >= HEATER_MIN && dimmer < HEATER_MAX)
     {
         Timer1.setPeriod(dimmer);
-        timer1_dimmerFlag = true;
-    }
-    else
-    {
-        timer1_dimmerFlag = false;
     }
 }
 
 ISR(TIMER1_A)
 {
-    if (servo.getState() != MOVE && timer1_dimmerFlag)
+    if (servo.getState() != MOVE)
     {
         PORTD |= (1 << DIMMER_PIN);
-        timer1_dimmerFlag = false;
         Timer1.stop();
     }
-    else if (servo.getState() == MOVE)
+    else
     {
         servo.updateServo();
     }
@@ -1057,7 +1050,6 @@ void updateIDryerData()
     pid.SetFilterGain(dryer.data.Kf);
 
     servo.set(eeprom_read_word(&menuVal[DEF_SERVO_CLOSED]), eeprom_read_word(&menuVal[DEF_SERVO_OPEN]), eeprom_read_word(&menuVal[DEF_SERVO_CORNER]));
-    // servo.toggle();
     WDT_DISABLE();
 }
 
@@ -1127,7 +1119,7 @@ void heaterON()
 {
     WDT(WDTO_250MS, 3);
 #ifdef v220V
-    attachInterrupt(INT_NUM, isr, RISING);
+    attachInterrupt(INT_NUM, on_zero_crossing, RISING);
     dimmer = HEATER_MAX;
 #else
     dimmer = HEATER_MIN;
@@ -1160,7 +1152,6 @@ void heaterOFF()
     WDT(WDTO_250MS, 1);
 #ifdef v220V
     detachInterrupt(INT_NUM);
-    timer1_dimmerFlag = false;
     dimmer = HEATER_OFF;
     digitalWrite(DIMMER_PIN, 0);
 #else
@@ -1523,6 +1514,7 @@ void storageFlow()
     getData();
     setPoint();
     screenUpdate();
+    servo.updateServo();
 
     if (enc.hold())
     {
@@ -1536,8 +1528,6 @@ void storageFlow()
     if (dryer.data.flag)
     {
         dryer.data.flagTimeCounter ? fanON(dryer.data.setFan) : fanMAX();
-        setPoint();
-        servo.updateServo();
 
         if (dryer.data.setTemp <= dryer.data.airTempCorrected && dryer.data.airHumidity <= dryer.data.setHumidity)
         {
