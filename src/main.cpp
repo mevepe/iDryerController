@@ -1,9 +1,6 @@
 #include <Arduino.h>
 #include <Configuration.h>
 #include <Wire.h>
-#if SCALES_MODULE_NUM != 0 && AUTOPID_RUN == 1
-#include <EEPROM.h>
-#endif
 #include <avr/wdt.h>
 #include <U8g2lib.h>
 #include <GyverTimers.h>
@@ -178,7 +175,7 @@ volatile bool prevStatePC3 = false;
 #define ENCODER_KEY (A3)
 EncButton enc(ENCODER_S1, ENCODER_S2, ENCODER_KEY, INPUT, INPUT_PULLUP, LOW);
 
-#if SCALES_MODULE_NUM > 0 && AUTOPID_RUN == 0
+#if SCALES_MODULE_NUM > 0
 #define DT_PIN 8
 #define SCK_PIN 9
 #define A_PIN 10
@@ -655,7 +652,7 @@ void setup()
     } while (oled.nextPage());
     delay(300000);
 #endif
-#if SCALES_MODULE_NUM != 0 && AUTOPID_RUN == 0
+#if SCALES_MODULE_NUM != 0
     hx711Multi.begin(128);
 #endif
 
@@ -679,7 +676,7 @@ void loop()
         }
     }
 
-#if SCALES_MODULE_NUM != 0 && AUTOPID_RUN == 0
+#if SCALES_MODULE_NUM != 0
     hx711Multi.readMassMulti();
     filamentCheck(sensorNum, hx711Multi.getMassMulti(sensorNum), dryer.state, prevSpoolMass);
     sensorNum++;
@@ -1187,11 +1184,11 @@ void pwm_test()
 
 void screenUpdate()
 {
-#if SCALES_MODULE_NUM == 0 && AUTOPID_RUN == 0
+#if SCALES_MODULE_NUM == 0
     if (dryer.data.flagScreenUpdate)
         displayPrintMode();
 #endif
-#if SCALES_MODULE_NUM != 0 && AUTOPID_RUN == 0
+#if SCALES_MODULE_NUM != 0
     if (millis() - scaleTimer > MENU_SCALE_SWITCH_TIME)
     {
         scaleTimer = millis();
@@ -1298,7 +1295,7 @@ void menuFlow()
         fanOFF();
     }
 
-#if SCALES_MODULE_NUM != 0 && AUTOPID_RUN == 0
+#if SCALES_MODULE_NUM != 0
     if (hx711Multi.tare[hx711Multi.sensorNum] != (uint8_t)eeprom_read_word(&menuVal[DEF_COIL_1_TARA + (hx711Multi.sensorNum * 3)]))
     {
         hx711Multi.tare[hx711Multi.sensorNum] = (uint8_t)eeprom_read_word(&menuVal[DEF_COIL_1_TARA + (hx711Multi.sensorNum * 3)]);
@@ -1307,7 +1304,7 @@ void menuFlow()
 
     controlsHandler(menuPGM, menuVal, menuFunc, &subMenuM);
 
-#if SCALES_MODULE_NUM != 0 && AUTOPID_RUN == 0
+#if SCALES_MODULE_NUM != 0
 
     if (millis() - scaleTimer > MENU_SCALE_SWITCH_TIME && subMenuM.parentID == 0)
     {
@@ -1329,7 +1326,7 @@ void menuFlow()
             displayPrint(&subMenuM);
         }
 
-#if SCALES_MODULE_NUM != 0 && AUTOPID_RUN == 0
+#if SCALES_MODULE_NUM != 0
     }
 #endif
     WDT_DISABLE();
@@ -1558,7 +1555,7 @@ float optional_round(float value)
 #endif
 }
 
-#if SCALES_MODULE_NUM > 0 && AUTOPID_RUN == 0
+#if SCALES_MODULE_NUM > 0
 void zero_set_by_num(uint8_t numSensor)
 {
     hx711Multi.zeroSetupMulti(numSensor);
@@ -1637,35 +1634,35 @@ void setSpool(uint8_t spool)
 }
 #endif
 
-#if SCALES_MODULE_NUM > 0 && AUTOPID_RUN == 0
+#if SCALES_MODULE_NUM > 0
 void setSpool1()
 {
     setSpool(0);
 }
 #endif
 
-#if SCALES_MODULE_NUM > 1 && AUTOPID_RUN == 0
+#if SCALES_MODULE_NUM > 1
 void setSpool2()
 {
     setSpool(1);
 }
 #endif
 
-#if SCALES_MODULE_NUM > 2 && AUTOPID_RUN == 0
+#if SCALES_MODULE_NUM > 2
 void setSpool3()
 {
     setSpool(2);
 }
 #endif
 
-#if SCALES_MODULE_NUM > 3 && AUTOPID_RUN == 0
+#if SCALES_MODULE_NUM > 3
 void setSpool4()
 {
     setSpool(3);
 }
 #endif
 
-#if SCALES_MODULE_NUM != 0 && AUTOPID_RUN == 0
+#if SCALES_MODULE_NUM != 0
 void scaleShow()
 {
     WDT(WDTO_500MS, 20);
