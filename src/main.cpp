@@ -344,7 +344,7 @@ iDryer dryer(ntc, sht);
 #endif
 
 uint32_t zero_impulse_count = 0;
-Servo servo(SERVO_1_PIN);
+Servo servo;
 
 BuzzerController buzzer(BUZZER_PIN);
 
@@ -1489,6 +1489,7 @@ void dryFlow()
     setPoint();
     screenUpdate();
     fanON(dryer.data.setFan);
+    servo.autotoggle();
 
     if (enc.hold())
     {
@@ -1527,6 +1528,7 @@ void storageFlow()
     getData();
     setPoint();
     screenUpdate();
+    servo.autotoggle();
 
     if (enc.hold())
     {

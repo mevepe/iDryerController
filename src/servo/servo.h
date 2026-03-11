@@ -16,12 +16,11 @@ enum ServoState
 class Servo
 {
 private:
-  uint8_t _servoPin = 0;
+  unsigned long _currentTimeMs = 0;
+  unsigned long _prevLogTimeMs = 0;
 
   unsigned long _nextToggleTimeMs = 0;
   unsigned long _nextMoveTimeMs = 0;
-
-  unsigned long _prevLogTimeMs = 0;
 
   uint16_t _openedDuration = 0;
   uint16_t _closedDuration = 0;
@@ -36,7 +35,7 @@ private:
   ServoState _state = UNKNOWN;
 
 public:
-  Servo(uint8_t servoPin);
+  Servo();
 
   ServoState getState() const;
 
@@ -47,6 +46,8 @@ public:
   void update();
 
   void toggle();
+
+  void autotoggle();
 
   void open();
   

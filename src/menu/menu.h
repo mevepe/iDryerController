@@ -254,9 +254,9 @@ uint16_t menuVal[] EEMEM = {
     100,                     // id: 32 airflow
     0,                       // id: 33 delta
     0,                       // id: 34
-    1,                       // id: 35 servo close duration
+    10,                      // id: 35 servo close duration
     1,                       // id: 36 servo open duration
-    45,                      // id: 37 servo open angle
+    55,                      // id: 37 servo open angle
     0,                       // id: 38
 #if SCALES_MODULE_NUM > 0
     0, // id: 39

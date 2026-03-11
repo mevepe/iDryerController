@@ -248,7 +248,7 @@ the minimum and maximum pulse widths that will suit most servos (in us)
 https://en.wikipedia.org/wiki/Servo_control
 SERVO_CUCKOO - Servo sound notification time 0 - off, 50-100 - normal
  ********************/
-#define SERVO_MIN_PULSE 300
+#define SERVO_MIN_PULSE 1000
 #define SERVO_MAX_PULSE 2000
 #define SERVO_PERIOD_MS 20
 #define SERVO_CUCKOO 50 // 0
