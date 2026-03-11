@@ -56,21 +56,21 @@ public:
   PIDController pid;
 
 private:
-  thermistor &ntc;
+  thermistor &_ntc;
 
 #ifdef SENSOR_BME280
-  GyverBME280 &bme;
+  GyverBME280 &_bme;
 #else
   SHT31 &sht;
 #endif
 
-  unsigned long lastScreenUpdateTimestamp = 0;
+  unsigned long _lastScreenUpdateTimestamp = 0;
 
-  float setpoint = 0;
-  float input = 0;
-  float output = 0;
+  float _setpoint = 0;
+  float _input = 0;
+  float _output = 0;
 
-  uint16_t dimmer = 0;
+  uint16_t _dimmer = 0;
 
 public:
 #ifdef SENSOR_BME280

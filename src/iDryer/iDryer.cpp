@@ -1,57 +1,57 @@
 #include "iDryer.h"
 
 #ifdef SENSOR_BME280
-iDryer::iDryer(thermistor &ntc, GyverBME280 &bme) : ntc(ntc), bme(bme)
+iDryer::iDryer(thermistor &ntc, GyverBME280 &bme) : _ntc(ntc), _bme(bme)
 {
 }
 #else
-iDryer::iDryer(thermistor &ntc, SHT31 &sht) : ntc(ntc), sht(sht)
+iDryer::iDryer(thermistor &ntc, SHT31 &sht) : _ntc(ntc), _sht(sht)
 {
 }
 #endif
 
 float iDryer::GetSetpoint() const
 {
-  return setpoint;
+  return _setpoint;
 }
 float iDryer::GetOutput() const
 {
-  return output;
+  return _output;
 }
 
 void iDryer::SetOutput(float output)
 {
-  this->output = output;
-  this->dimmer = uint16_t(math::map_to_range_with_clamp(output, pid.GetMinOutput(), pid.GetMaxOutput(), HEATER_MIN, HEATER_MAX));
+  _output = output;
+  _dimmer = uint16_t(math::map_to_range_with_clamp(output, pid.GetMinOutput(), pid.GetMaxOutput(), HEATER_MIN, HEATER_MAX));
 }
 
 uint16_t iDryer::getPulseWidth() const
 {
-  return dimmer;
+  return _dimmer;
 }
 
 bool iDryer::IsHeatingAllowed() const
 {
-  return (state == DRY || state == STORAGE || state == AUTOPID) && dimmer >= HEATER_MIN && dimmer < HEATER_MAX;
+  return (state == DRY || state == STORAGE || state == AUTOPID) && _dimmer >= HEATER_MIN && _dimmer < HEATER_MAX;
 }
 
 bool iDryer::getData()
 {
   data.timestamp = millis();
-  data.ntcTemp = (ntc.analog2temp() + data.ntcTemp) / 2.0f;
+  data.ntcTemp = (_ntc.analog2temp() + data.ntcTemp) / 2.0f;
 
 #ifdef SENSOR_SHT31
-  if (sht.dataReady())
+  if (_sht.dataReady())
   {
-    sht.read();
-    data.airTemp = (sht.getTemperature() + data.airTemp) / 2.0f;
-    data.airHumidity = (sht.getHumidity() + data.airHumidity) / 2.0f;
+    _sht.read();
+    data.airTemp = (_sht.getTemperature() + data.airTemp) / 2.0f;
+    data.airHumidity = (_sht.getHumidity() + data.airHumidity) / 2.0f;
   }
 #endif
 
 #ifdef SENSOR_BME280
-  data.airTemp = (bme.readTemperature() + data.airTemp) / 2.0f;
-  data.airHumidity = (bme.readHumidity() + data.airHumidity) / 2.0f;
+  data.airTemp = (_bme.readTemperature() + data.airTemp) / 2.0f;
+  data.airHumidity = (_bme.readHumidity() + data.airHumidity) / 2.0f;
 #endif
 
   data.airTempCorrected = data.airTemp;
@@ -62,9 +62,9 @@ bool iDryer::getData()
     data.airTempCorrected = math::map_to_range_with_clamp(data.airTemp, MIN_CALIB_TEMP, MAX_CALIB_TEMP, REAL_CALIB_TEMP_MIN, REAL_CALIB_TEMP_MAX);
   }
 
-  if (data.timestamp - lastScreenUpdateTimestamp > SCREEN_UPADATE_TIME)
+  if (data.timestamp - _lastScreenUpdateTimestamp > SCREEN_UPADATE_TIME)
   {
-    lastScreenUpdateTimestamp = data.timestamp;
+    _lastScreenUpdateTimestamp = data.timestamp;
     data.flagScreenUpdate = true;
   }
 
@@ -110,32 +110,32 @@ void iDryer::Setpoint()
     adjustment -= math::map_to_range_with_clamp(abs(delta), 0.0f, 1.0f, 0.0f, HEATING_THRESHOLD);
   }
 
-  setpoint = desiredTemp + adjustment;
+  _setpoint = desiredTemp + adjustment;
 
-  if (setpoint > TMP_MAX)
+  if (_setpoint > TMP_MAX)
   {
-    setpoint = TMP_MAX;
+    _setpoint = TMP_MAX;
   }
 
   // Отключение при критическом перегреве
   if (currentTemp >= desiredTemp + CRITICAL_OVERHEAT)
   {
-    setpoint = 0;
+    _setpoint = 0;
   }
 
-  input = data.ntcTemp;
+  _input = data.ntcTemp;
 
   auto timeInSeconds = data.timestamp / float(math::msCountInSec);
-  auto heaterTempError = setpoint - input;
+  auto heaterTempError = _setpoint - _input;
   pid.Process(timeInSeconds, heaterTempError);
 
   if (pid.IsOutputUpdated())
   {
     SetOutput(pid.GetOutput());
 
-    if (setpoint == 0)
+    if (_setpoint == 0)
     {
-      dimmer = HEATER_OFF;
+      _dimmer = HEATER_OFF;
     }
 
 #if KASYAK_FINDER && DRY_LOGS
@@ -148,9 +148,9 @@ void iDryer::Setpoint()
     Serial.print(" t: ");
     Serial.print(currentTemp, 2);
     Serial.print(" s: ");
-    Serial.print(setpoint, 2);
+    Serial.print(_setpoint, 2);
     Serial.print(" n: ");
-    Serial.print(input, 2);
+    Serial.print(_input, 2);
     Serial.print(" dt: ");
     Serial.print(pid.GetDeltaTime(), 3);
     Serial.print(" pt: ");
@@ -164,7 +164,7 @@ void iDryer::Setpoint()
     Serial.print(" o: ");
     Serial.print(pid.GetOutput(), 2);
     Serial.print(" d: ");
-    Serial.print(dimmer);
+    Serial.print(_dimmer);
     Serial.println();
     Serial.flush();
 #endif
