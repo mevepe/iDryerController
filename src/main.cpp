@@ -356,7 +356,9 @@ void servoTest()
 #ifdef v220V
 void on_zero_crossing()
 {
-    PORTD &= ~(1 << DIMMER_PIN);
+    PORTD &= ~(1 << SERVO_1_PIN); // Обнуление интервала ШИМ для сервопривода
+    PORTD &= ~(1 << DIMMER_PIN); // Выключение нагревателя при каждом пересечении нуля
+    
     if (isHeatingAllowed() && servo.getState() != MOVE) // Проверка режимы работы для включения нагревателя и что сервопривод не в движении
     {
         Timer1.setPeriod(dimmer); // Установка времени до включения нагревателя
@@ -682,8 +684,8 @@ void setup()
         i--;
     }
 
-    Timer1.enableISR(CHANNEL_A);
-    servo.close();
+    Timer1.enableISR(CHANNEL_A); // Разрешаем прерывание для таймера 1, канал A
+    attachInterrupt(INT_NUM, on_zero_crossing, RISING); // Подключаем прерывание для пересечения нуля
 
 #ifdef PWM_TEST
     pwm_test();
@@ -1118,7 +1120,6 @@ void heaterON()
 {
     WDT(WDTO_250MS, 3);
 #ifdef v220V
-    attachInterrupt(INT_NUM, on_zero_crossing, RISING);
     dimmer = HEATER_MAX;
 #else
     dimmer = HEATER_MIN;
@@ -1150,7 +1151,6 @@ void heaterOFF()
 {
     WDT(WDTO_250MS, 1);
 #ifdef v220V
-    detachInterrupt(INT_NUM);
     dimmer = HEATER_OFF;
     digitalWrite(DIMMER_PIN, 0);
 #else
