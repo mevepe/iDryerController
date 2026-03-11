@@ -357,11 +357,15 @@ void servoTest()
 void on_zero_crossing()
 {
     PORTD &= ~(1 << SERVO_1_PIN); // Обнуление интервала ШИМ для сервопривода
-    PORTD &= ~(1 << DIMMER_PIN); // Выключение нагревателя при каждом пересечении нуля
-    
+    PORTD &= ~(1 << DIMMER_PIN);  // Выключение нагревателя при каждом пересечении нуля
+
     if (isHeatingAllowed() && servo.getState() != MOVE) // Проверка режимы работы для включения нагревателя и что сервопривод не в движении
     {
         Timer1.setPeriod(dimmer); // Установка времени до включения нагревателя
+    }
+    else if (servo.getState() == MOVE)
+    {
+        Timer1.setPeriod(servo.getPulseWidth()); // Используем общий таймер для управления сервоприводом
     }
 }
 
@@ -370,6 +374,10 @@ ISR(TIMER1_A)
     if (isHeatingAllowed() && servo.getState() != MOVE) // Проверка, что это таймер для нагревателя
     {
         PORTD |= (1 << DIMMER_PIN); // Включение нагревателя
+    }
+    else if (servo.getState() == MOVE)
+    {
+        PORTD |= (1 << SERVO_1_PIN); // Включение сигнала для сервопривода
     }
 
     Timer1.stop(); // Остановка таймера в любом случае
@@ -684,7 +692,7 @@ void setup()
         i--;
     }
 
-    Timer1.enableISR(CHANNEL_A); // Разрешаем прерывание для таймера 1, канал A
+    Timer1.enableISR(CHANNEL_A);                        // Разрешаем прерывание для таймера 1, канал A
     attachInterrupt(INT_NUM, on_zero_crossing, RISING); // Подключаем прерывание для пересечения нуля
 
 #ifdef PWM_TEST

@@ -3,12 +3,17 @@
 Servo::Servo(uint8_t servoPin)
 {
   _servoPin = servoPin;
-  _moveDuration = 2000; // Длительность изменения положения сервопривода в миллисекундах
+  _moveDuration = 10000; // Длительность изменения положения сервопривода в миллисекундах
 }
 
 ServoState Servo::getState() const
 {
   return _state;
+}
+
+uint16_t Servo::getPulseWidth() const
+{
+  return _pulseWidth;
 }
 
 void Servo::set(uint16_t closedDuration, uint16_t openedDuration, uint16_t openedAngle)
@@ -30,8 +35,6 @@ void Servo::update()
   if (_state == MOVE)
   {
     _pulseWidth = map(_targetAngle, 0, 180, SERVO_MIN_PULSE, SERVO_MAX_PULSE);
-    PORTD |= (1 << _servoPin);
-    Timer1.setPeriod(_pulseWidth); // Используем общий таймер для управления сервоприводом
 
     if (_nextMoveTimeMs < currentTimeMs)
     {

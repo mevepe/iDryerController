@@ -40,6 +40,8 @@ public:
 
   ServoState getState() const;
 
+  uint16_t getPulseWidth() const;
+
   void set(uint16_t closedDuration, uint16_t openedDuration, uint16_t openedAngle);
 
   void update();
