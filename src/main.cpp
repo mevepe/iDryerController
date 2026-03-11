@@ -658,6 +658,8 @@ void setup()
 #if SCALES_MODULE_NUM != 0 && AUTOPID_RUN == 0
     hx711Multi.begin(128);
 #endif
+
+    dryer.state = MENU;
 }
 
 void loop()
