@@ -949,7 +949,7 @@ void storageStart()
     updateIDryerData();
     heaterON();
 
-    state = STORAGE;
+    dryer.state = STORAGE;
 
     dryer.data.flag = true;
     dryer.data.flagTimeCounter = false;
