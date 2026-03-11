@@ -1509,7 +1509,7 @@ void autoPidFlow()
 
 #if KASYAK_FINDER && AUTOPID_LOGS
         Serial.print(" dt: ");
-        Serial.print(tuner.getDeltaTime());
+        Serial.print(tuner.getDeltaTime(), 3);
         Serial.print(" n: ");
         Serial.print(dryer.data.ntcTemp, 2);
         Serial.print(" c: ");
@@ -1521,7 +1521,7 @@ void autoPidFlow()
         Serial.print(" kd: ");
         Serial.print(tuner.getKd(), 3);
         Serial.print(" o: ");
-        Serial.print(Output, 2);
+        Serial.print(dryer.GetOutput(), 2);
         Serial.println();
         Serial.flush();
 #endif
