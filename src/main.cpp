@@ -331,6 +331,7 @@ void ntcErrorFlow();
 /* 0 */  // ADC ACCUMULATED ERROR
 /* 31 */ // dryer.getData
 void updateDimmer();
+bool isHeatingAllowed();
 void WDT(uint16_t time, uint8_t current_function_uuid);
 void WDT_DISABLE();
 void calibration();
@@ -356,19 +357,20 @@ void servoTest()
 void on_zero_crossing()
 {
     PORTD &= ~(1 << DIMMER_PIN);
-    if ((state == DRY || state == STORAGE || state == AUTOPID) && servo.getState() != MOVE && dimmer >= HEATER_MIN && dimmer < HEATER_MAX)
+    if (isHeatingAllowed() && servo.getState() != MOVE) // Проверка режимы работы для включения нагревателя и что сервопривод не в движении
     {
-        Timer1.setPeriod(dimmer);
+        Timer1.setPeriod(dimmer); // Установка времени до включения нагревателя
     }
 }
 
 ISR(TIMER1_A)
 {
-    if (servo.getState() != MOVE)
+    if (isHeatingAllowed() && servo.getState() != MOVE) // Проверка, что это таймер для нагревателя
     {
-        PORTD |= (1 << DIMMER_PIN);
-        Timer1.stop();
+        PORTD |= (1 << DIMMER_PIN); // Включение нагревателя
     }
+
+    Timer1.stop(); // Остановка таймера в любом случае
 }
 #endif
 
@@ -714,6 +716,7 @@ void loop()
     // calibration();
     enc.tick();
     buzzer.update();
+    servo.update();
 
     tmpTemp = (tmpTemp * 9 + analogRead(NTC_PIN)) / 10;
     if (tmpTemp <= ADC_MIN || tmpTemp >= ADC_MAX)
@@ -1499,7 +1502,6 @@ void dryFlow()
         // DEBUG_PRINT(6);
     }
 
-    servo.updateServo();
     // DEBUG_PRINT(7);
     WDT_DISABLE();
 }
@@ -1510,7 +1512,6 @@ void storageFlow()
     getData();
     setPoint();
     screenUpdate();
-    servo.updateServo();
 
     if (enc.hold())
     {
@@ -1682,6 +1683,11 @@ void autoPidFlow()
 void updateDimmer()
 {
     dimmer = static_cast<uint16_t>(math::map_to_range_with_clamp(Output, pid.GetMinOutput(), pid.GetMaxOutput(), HEATER_MAX, HEATER_MIN));
+}
+
+bool isHeatingAllowed()
+{
+    return (state == DRY || state == STORAGE || state == AUTOPID) && dimmer >= HEATER_MIN && dimmer < HEATER_MAX;
 }
 
 float optional_round(float value)

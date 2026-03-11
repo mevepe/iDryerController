@@ -21,6 +21,8 @@ private:
   unsigned long _nextToggleTimeMs = 0;
   unsigned long _nextMoveTimeMs = 0;
 
+  unsigned long _prevLogTimeMs = 0;
+
   uint16_t _openedDuration = 0;
   uint16_t _closedDuration = 0;
   uint16_t _moveDuration = 0;
@@ -40,7 +42,7 @@ public:
 
   void set(uint16_t closedDuration, uint16_t openedDuration, uint16_t openedAngle);
 
-  void updateServo();
+  void update();
 
   void toggle();
 
