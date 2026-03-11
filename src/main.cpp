@@ -369,10 +369,6 @@ ISR(TIMER1_A)
         PORTD |= (1 << DIMMER_PIN);
         Timer1.stop();
     }
-    else
-    {
-        servo.updateServo();
-    }
 }
 #endif
 
