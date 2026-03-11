@@ -343,6 +343,7 @@ iDryer dryer(ntc, bme);
 iDryer dryer(ntc, sht);
 #endif
 
+uint32_t zero_impulse_count = 0;
 Servo servo(SERVO_1_PIN);
 
 BuzzerController buzzer(BUZZER_PIN);
@@ -356,8 +357,12 @@ void servoTest()
 #ifdef v220V
 void on_zero_crossing()
 {
-    PORTD &= ~(1 << SERVO_1_PIN); // Обнуление интервала ШИМ для сервопривода
-    PORTD &= ~(1 << DIMMER_PIN);  // Выключение нагревателя при каждом пересечении нуля
+    PORTD &= ~(1 << DIMMER_PIN); // Выключение нагревателя при каждом пересечении нуля
+
+    if (zero_impulse_count % 2 == 0) // Снижаем частоту до 50 Гц
+    {
+        PORTD |= (1 << SERVO_1_PIN); // Включение сигнала для сервопривода
+    }
 
     if (isHeatingAllowed() && servo.getState() != MOVE) // Проверка режимы работы для включения нагревателя и что сервопривод не в движении
     {
@@ -367,6 +372,8 @@ void on_zero_crossing()
     {
         Timer1.setPeriod(servo.getPulseWidth()); // Используем общий таймер для управления сервоприводом
     }
+
+    zero_impulse_count++;
 }
 
 ISR(TIMER1_A)
@@ -377,7 +384,7 @@ ISR(TIMER1_A)
     }
     else if (servo.getState() == MOVE)
     {
-        PORTD |= (1 << SERVO_1_PIN); // Включение сигнала для сервопривода
+        PORTD &= ~(1 << SERVO_1_PIN); // Обнуление интервала ШИМ для сервопривода
     }
 
     Timer1.stop(); // Остановка таймера в любом случае
