@@ -5,9 +5,12 @@
 #include <GyverTimers.h>
 #include "Configuration.h"
 #include "math/math_extensions.h"
+#include "math/algorithms/pid/pid.h"
 #include "thermistor/thermistor.h"
 #include "GyverBME280.h"
 #include "SHT31.h"
+
+using math::algorithms::PIDController;
 
 enum State
 {
@@ -46,9 +49,13 @@ struct Data
 
 class iDryer
 {
+  // TODO: Prefer getters and setters for data members instead of direct access
 public:
+  State state = OFF;
   Data data;
-  unsigned long lastScreenUpdateTimestamp = 0;
+  PIDController pid;
+
+private:
   thermistor &ntc;
 
 #ifdef SENSOR_BME280
@@ -57,13 +64,33 @@ public:
   SHT31 &sht;
 #endif
 
+  unsigned long lastScreenUpdateTimestamp = 0;
+
+  float setpoint = 0;
+  float input = 0;
+  float output = 0;
+
+  uint16_t dimmer = 0;
+
+public:
 #ifdef SENSOR_BME280
   iDryer(thermistor &ntc, GyverBME280 &bme);
 #else
   iDryer(thermistor &ntc, SHT31 &sht);
 #endif
 
+  float GetSetpoint() const;
+
+  float GetOutput() const;
+  void SetOutput(float output);
+
+  uint16_t getPulseWidth() const;
+
+  bool IsHeatingAllowed() const;
+
   bool getData();
+
+  void Setpoint();
 };
 
 #endif // IDRYER_H

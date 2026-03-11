@@ -253,19 +253,20 @@ SERVO_CUCKOO - Servo sound notification time 0 - off, 50-100 - normal
 #define SERVO_PERIOD_MS 20
 #define SERVO_CUCKOO 50 // 0
 
+/*********************
+ * НЕ ВЛЕЗАЙ! УЕБЬЕТ!
+ * меняй это на свой страх и риск
+ ********************/
+#define HEATER_MIN 500
+#define HEATER_MAX 9499
+#define HEATER_OFF 9500
+
 /**********************
 if you change here, do an upload isp and upload eep anyway
-if your SCALES_MODULE_NUM not 0 do this:
-   1 pio run -e EEP -t fullclean -t uploadeep
-   2 set #define AUTOPID_RUN 1
-   2.1 CTRL + S
-   3 pio run -e EEP -t fullclean -t upload
-   4 wait for autopid to finish setting up
-   5 set #define AUTOPID_RUN 0
-   5.1 CTRL + S
-   6 pio run -e EEP -t fullclean -t upload
- ********************/
-#define AUTOPID_RUN 0
+
+pio run -e EEP -t fullclean -t uploadeep -t upload
+
+********************/
 #define SCALES_MODULE_NUM 0
 
 #define FILAMENT_SENSOR_ON                   //
@@ -306,8 +307,8 @@ language, will not be displayed
 #endif
 
 #define KASYAK_FINDER 1
-#define DRY_LOGS 0
-#define SERVO_LOGS 1
+#define DRY_LOGS 1
+#define SERVO_LOGS 0
 #define AUTOPID_LOGS 0
 
 #endif
