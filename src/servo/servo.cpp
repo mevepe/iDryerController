@@ -1,124 +1,77 @@
 #include "servo.h"
 
-Servo::Servo(uint8_t _srvPin, uint16_t _closedTime, uint16_t _openTime, uint16_t _angle)
+Servo::Servo(uint8_t servoPin)
 {
-  pin = _srvPin;
-  closedTime = _closedTime;
-  openTime = _openTime;
-  angle = _angle * angleMultiplier;
+  _servoPin = servoPin;
 }
 
-void Servo::set(uint16_t _closedTime, uint16_t _openTime, uint16_t _angle)
+ServoState Servo::getState() const
 {
-  closedTime = _closedTime;
-  openTime = _openTime;
-  angle = _angle * angleMultiplier;
+  return _state;
+}
+
+void Servo::set(uint16_t closedDuration, uint16_t openedDuration, uint16_t openedAngle)
+{
+  _closedDuration = closedDuration;
+  _openedDuration = openedDuration;
+  _openedAngle = openedAngle;
 }
 
 void Servo::updateServo()
 {
-  if (setAngle())
-  {
-    if (changeState)
-    {
-      if (currentAngle == closedAngle)
-      {
-        state = CLOSED;
-      }
-      else
-      {
-        state = OPEN;
-      }
-      changeState = 0;
-    }
-  }
-  else
-  {
-    if (servoPin)
-    {
-      PORTD &= ~(1 << pin);
-      Timer1.setPeriod(SERVO_PERIOD_MS * 1000 - pulseWidth);
-      servoPin = LOW;
-    }
-    else
-    {
-      pulseWidth = map(currentAngle, 0, 180 * angleMultiplier, SERVO_MIN_PULSE, SERVO_MAX_PULSE);
-      PORTD |= (1 << pin);
-      Timer1.setPeriod(pulseWidth);
-      servoPin = HIGH;
-    }
-  }
-}
+  auto currentTimeMs = millis();
 
-bool Servo::setAngle()
-{
-  if (currentAngle != angle)
+  if (_state == MOVE)
   {
-    if (state != MOVE)
-    {
-      prevState = state;
-      state = MOVE;
-      PORTD &= ~(1 << pin);
-      Timer1.enableISR(CHANNEL_A);
-    }
-    if (currentAngle < angle)
-    {
-      currentAngle++;
-    }
-    else
-    {
-      currentAngle--;
-    }
-    return 0;
-  }
-  else
-  {
-    return 1;
-  }
-}
+    _pulseWidth = map(_targetAngle, 0, 180, SERVO_MIN_PULSE, SERVO_MAX_PULSE);
+    PORTD |= (1 << _servoPin);
+    Timer1.setPeriod(_pulseWidth);
 
-void Servo::close()
-{
-  state = OPEN;
-  currentAngle = 130;
-  changeState = 1;
-  angle = closedAngle;
-  updateServo();
+    if (_nextMoveTimeMs < currentTimeMs)
+    {
+      _state = (_targetAngle == _openedAngle) ? OPEN : CLOSED;
+    }
+  }
+
+  if (_state == CLOSED && _nextToggleTimeMs < currentTimeMs && _openedDuration > 0)
+  {
+    toggle();
+    _nextToggleTimeMs = currentTimeMs + (unsigned long)_openedDuration * 1000UL * 60UL;
+  }
+
+  if (_state == OPEN && _nextToggleTimeMs < currentTimeMs && _closedDuration > 0)
+  {
+    toggle();
+    _nextToggleTimeMs = currentTimeMs + (unsigned long)_closedDuration * 1000UL * 60UL;
+  }
 }
 
 void Servo::toggle()
 {
-  if (state == CLOSED)
+  if (_state == CLOSED)
   {
-    changeState = 1;
-    angle = closedAngle + angle;
+    open();
   }
-  if (state == OPEN)
+  if (_state == OPEN)
   {
-    changeState = 1;
-    angle = closedAngle;
+    close();
   }
+}
+
+void Servo::open()
+{
+  _targetAngle = _openedAngle;
+  _state = MOVE;
+  _nextMoveTimeMs = millis() + _moveDuration;
+
   updateServo();
 }
 
-void Servo::check()
+void Servo::close()
 {
-  if (state == CLOSED)
-  {
-    if (servoOldTime < millis() && openTime)
-    {
-      toggle();
-      servoOldTime = millis() + (unsigned long)openTime * 1000UL * 60UL;
-    }
-    updateServo();
-  }
-  if (state == OPEN)
-  {
-    if (servoOldTime < millis() && closedTime)
-    {
-      toggle();
-      servoOldTime = millis() + (unsigned long)closedTime * 1000UL * 60UL;
-    }
-    updateServo();
-  }
+  _targetAngle = _closedAngle;
+  _state = MOVE;
+  _nextMoveTimeMs = millis() + _moveDuration;
+
+  updateServo();
 }

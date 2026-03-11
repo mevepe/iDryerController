@@ -343,7 +343,7 @@ iDryer dryer(ntc, bme);
 iDryer dryer(ntc, sht);
 #endif
 
-Servo servo(SERVO_1_PIN, eeprom_read_word(&menuVal[DEF_SERVO_CLOSED]), eeprom_read_word(&menuVal[DEF_SERVO_OPEN]), eeprom_read_word(&menuVal[DEF_SERVO_CORNER]));
+Servo servo(SERVO_1_PIN);
 
 BuzzerController buzzer(BUZZER_PIN);
 
@@ -356,19 +356,9 @@ void servoTest()
 #ifdef v220V
 void isr()
 {
-#ifdef DEBUG
-#endif
     PORTD &= ~(1 << DIMMER_PIN);
-    if ((state == DRY || state == STORAGE || state == AUTOPID) && servo.state != MOVE && dimmer >= HEATER_MIN && dimmer < HEATER_MAX)
+    if ((state == DRY || state == STORAGE || state == AUTOPID) && servo.getState() != MOVE && dimmer >= HEATER_MIN && dimmer < HEATER_MAX)
     {
-        // if (lastDim != dimmer)
-        // {
-        //     Timer1.setPeriod(lastDim = dimmer);
-        // }
-        // else
-        // {
-        //     Timer1.restart();
-        // }
         Timer1.setPeriod(dimmer);
         timer1_dimmerFlag = true;
     }
@@ -380,13 +370,13 @@ void isr()
 
 ISR(TIMER1_A)
 {
-    if (servo.state != MOVE && timer1_dimmerFlag)
+    if (servo.getState() != MOVE && timer1_dimmerFlag)
     {
         PORTD |= (1 << DIMMER_PIN);
         timer1_dimmerFlag = false;
         Timer1.stop();
     }
-    else if (servo.state == MOVE)
+    else if (servo.getState() == MOVE)
     {
         servo.updateServo();
     }
@@ -701,6 +691,7 @@ void setup()
         i--;
     }
 
+    Timer1.enableISR(CHANNEL_A);
     servo.close();
 
 #ifdef PWM_TEST
@@ -1065,7 +1056,7 @@ void updateIDryerData()
     pid.SetDerivativeGain(dryer.data.Kd);
     pid.SetFilterGain(dryer.data.Kf);
 
-    // servo.set(eeprom_read_word(&menuVal[DEF_SERVO_CLOSED]), eeprom_read_word(&menuVal[DEF_SERVO_OPEN]), eeprom_read_word(&menuVal[DEF_SERVO_CORNER]));
+    servo.set(eeprom_read_word(&menuVal[DEF_SERVO_CLOSED]), eeprom_read_word(&menuVal[DEF_SERVO_OPEN]), eeprom_read_word(&menuVal[DEF_SERVO_CORNER]));
     // servo.toggle();
     WDT_DISABLE();
 }
@@ -1521,7 +1512,7 @@ void dryFlow()
         // DEBUG_PRINT(6);
     }
 
-    servo.check();
+    servo.updateServo();
     // DEBUG_PRINT(7);
     WDT_DISABLE();
 }
@@ -1546,11 +1537,11 @@ void storageFlow()
     {
         dryer.data.flagTimeCounter ? fanON(dryer.data.setFan) : fanMAX();
         setPoint();
-        servo.check();
+        servo.updateServo();
 
         if (dryer.data.setTemp <= dryer.data.airTempCorrected && dryer.data.airHumidity <= dryer.data.setHumidity)
         {
-            if (servo.state == OPEN)
+            if (servo.getState() == OPEN)
             {
                 servo.toggle();
             }
@@ -1561,7 +1552,7 @@ void storageFlow()
     }
     else
     {
-        if (servo.state == CLOSED && dryer.data.optimalConditionsReachedFlag == true)
+        if (servo.getState() == CLOSED && dryer.data.optimalConditionsReachedFlag == true)
         {
             dryer.data.optimalConditionsReachedFlag = false;
             heaterOFF();
@@ -1601,7 +1592,7 @@ void autoPidFlow()
     tuner.setTuningCycles(AUTOPID_ATTEMPT);
     tuner.setZNMode(PIDAutotuner::ZNModeBasicPID);
 
-    if (servo.state != CLOSED)
+    if (servo.getState() != CLOSED)
     {
         servo.close();
         delay(3000);
