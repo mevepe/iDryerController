@@ -944,8 +944,8 @@ void storageStart()
 #endif
 }
 
+void autoPidStart()
 {
-    void autoPidStart()
     WDT(WDTO_500MS, 12);
 
     updateIDryerData();
