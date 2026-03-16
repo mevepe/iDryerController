@@ -1509,10 +1509,6 @@ void autoPidFlow()
         Serial.print(tuner.getKi(), 4);
         Serial.print(" kd: ");
         Serial.print(tuner.getKd(), 3);
-        Serial.print(" ok: ");
-        Serial.print(dryer.IsHeatingAllowed());
-        Serial.print(" s: ");
-        Serial.print(dryer.state);
         Serial.print(" o: ");
         Serial.print(dryer.GetOutput(), 2);
         Serial.print(" d: ");

@@ -21,7 +21,7 @@ float iDryer::GetOutput() const
 void iDryer::SetOutput(float output)
 {
   _heaterOutput = output;
-  _dimmer = uint16_t(heaterPid.GetMappedOutput(HEATER_MAX, HEATER_MIN));
+  _dimmer = uint16_t(heaterPid.GetMappedOutput(output, HEATER_MAX, HEATER_MIN));
 }
 
 uint16_t iDryer::getPulseWidth() const
