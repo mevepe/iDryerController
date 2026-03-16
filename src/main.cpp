@@ -1441,10 +1441,12 @@ void autoPidFlow()
     auto minOutput = dryer.heaterPid.GetMinOutput();
     auto maxOutput = dryer.heaterPid.GetMaxOutput();
     auto minDeltaTimeMicroseconds = uint32_t(dryer.data.minDeltaTime * math::usCountInSec);
+    auto minSafeTimeMicroseconds = uint32_t(10.0f * math::usCountInSec);
 
     PIDAutotuner tuner;
     tuner.setTargetInputValue(dryer.data.setTemp);
     tuner.setLoopInterval(minDeltaTimeMicroseconds);
+    tuner.setSafeInterval(minSafeTimeMicroseconds);
     tuner.setOutputRange(minOutput, maxOutput);
     tuner.setTuningCycles(AUTOPID_ATTEMPT);
     tuner.setZNMode(PIDAutotuner::ZNModeBasicPID);
@@ -1511,6 +1513,8 @@ void autoPidFlow()
         dryer.SetOutput(tuner.tunePID(dryer.data.ntcTemp, currentMicroseconds));
 
 #if KASYAK_FINDER && AUTOPID_LOGS
+        Serial.print(" t: ");
+        Serial.print(dryer.data.timestamp);
         Serial.print(" dt: ");
         Serial.print(tuner.getDeltaTime(), 3);
         Serial.print(" n: ");

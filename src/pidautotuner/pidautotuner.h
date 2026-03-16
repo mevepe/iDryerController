@@ -31,6 +31,7 @@ public:
   // tuningCycles: number of cycles that the tuning runs for (optional, default is 10)
   void setTargetInputValue(float target);
   void setLoopInterval(long interval);
+  void setSafeInterval(long interval);
   void setOutputRange(float min, float max);
   void setZNMode(ZNMode zn);
   void setTuningCycles(int tuneCycles);
@@ -57,6 +58,7 @@ private:
   float deltaTime = 0;
   float targetInputValue = 0;
   float loopInterval = 0;
+  float safeInterval = 0;
   float minOutput = 0;
   float maxOutput = 0;
   ZNMode znMode = ZNModeNoOvershoot;
