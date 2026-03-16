@@ -634,24 +634,6 @@ void setup()
 #ifdef PWM_TEST
     pwm_test();
 #endif
-#if AUTOPID_RUN == 1
-    // Запись массивов в EEPROM
-    eeprom_write_dword(&zero_weight_eep[0], 1);
-    eeprom_write_dword(&zero_weight_eep[1], 1);
-    eeprom_write_dword(&offset_eep[0], 1);
-    eeprom_write_dword(&offset_eep[1], 1);
-
-    autoPidStart();
-    autoPidFlow();
-
-    oled.firstPage();
-    do
-    {
-        drawLine(printMenuItem(&serviceTxt[DEF_T_BURN]), 2);
-        drawLine(printMenuItem(&serviceTxt[DEF_T_PART]), 3);
-    } while (oled.nextPage());
-    delay(300000);
-#endif
 #if SCALES_MODULE_NUM != 0
     hx711Multi.begin(128);
 #endif
@@ -962,8 +944,8 @@ void storageStart()
 #endif
 }
 
-void autoPidStart()
 {
+    void autoPidStart()
     WDT(WDTO_500MS, 12);
 
     updateIDryerData();
@@ -992,7 +974,7 @@ void updateIDryerData()
 
     dryer.airPid.SetMinDeltaTime(dryer.data.minDeltaTime);
     dryer.airPid.SetFilterGain(dryer.data.Kf);
-    
+
     dryer.heaterPid.SetMinDeltaTime(dryer.data.minDeltaTime);
     dryer.heaterPid.SetProportionalGain(dryer.data.Kp);
     dryer.heaterPid.SetIntegralGain(dryer.data.Ki);
@@ -1527,8 +1509,14 @@ void autoPidFlow()
         Serial.print(tuner.getKi(), 4);
         Serial.print(" kd: ");
         Serial.print(tuner.getKd(), 3);
+        Serial.print(" ok: ");
+        Serial.print(dryer.IsHeatingAllowed());
+        Serial.print(" s: ");
+        Serial.print(dryer.state);
         Serial.print(" o: ");
         Serial.print(dryer.GetOutput(), 2);
+        Serial.print(" d: ");
+        Serial.print(dryer.getPulseWidth());
         Serial.println();
         Serial.flush();
 #endif
