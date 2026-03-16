@@ -114,7 +114,6 @@ temperature  sensor choice
  ***************************/
 #define DRY_START_THRESHOLD 1.0f // Порог для начала отсчета времени сушки (°C)
 #define HEATING_THRESHOLD 5.0f   // Порог для агрессивного нагрева (°C)
-#define HEATER_AIR_DELTA 10.0f   // Компенсация теплопотерь (°C)
 #define CRITICAL_OVERHEAT 5.0f   // Критическая температура (°C)
 
 #define TMP_MIN 1

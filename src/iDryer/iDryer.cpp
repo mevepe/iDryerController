@@ -2,6 +2,11 @@
 
 iDryer::iDryer(thermistor &heaterTempSensor, AirTempSensor &airTempSensor) : _heaterTempSensor(heaterTempSensor), _airTempSensor(airTempSensor)
 {
+  auto outputRange = airPid.GetMaxOutput() - airPid.GetMinOutput();
+
+  airPid.SetProportionalGain(outputRange / HEATING_THRESHOLD); // максимальная температура нагревателя до достижения границы агрессивного нагрева
+  airPid.SetIntegralGain(outputRange / HEATING_THRESHOLD);
+  airPid.SetDerivativeGain(0.0f); // используем PI регулятор для температуры воздуха
 }
 
 float iDryer::GetSetpoint() const
@@ -103,6 +108,11 @@ void iDryer::Setpoint()
   if (airPid.IsOutputUpdated())
   {
     _targetHeaterTemp = airPid.GetMappedOutput(0.0f, _targetAirTemp + data.deltaT);
+  }
+
+  if (_targetHeaterTemp > TMP_MAX)
+  {
+    _targetHeaterTemp = TMP_MAX;
   }
 
   // Отключение при критическом перегреве

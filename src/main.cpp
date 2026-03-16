@@ -991,6 +991,8 @@ void updateIDryerData()
     dryer.data.setFan = eeprom_read_word(&menuVal[DEF_SETTINGS_BLOWING]);
 
     dryer.airPid.SetMinDeltaTime(dryer.data.minDeltaTime);
+    dryer.airPid.SetFilterGain(dryer.data.Kf);
+    
     dryer.heaterPid.SetMinDeltaTime(dryer.data.minDeltaTime);
     dryer.heaterPid.SetProportionalGain(dryer.data.Kp);
     dryer.heaterPid.SetIntegralGain(dryer.data.Ki);
