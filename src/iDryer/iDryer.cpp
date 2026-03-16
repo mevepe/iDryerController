@@ -12,17 +12,17 @@ iDryer::iDryer(thermistor &ntc, SHT31 &sht) : _ntc(ntc), _sht(sht)
 
 float iDryer::GetSetpoint() const
 {
-  return _setpoint;
+  return _targetHeaterTemp;
 }
 float iDryer::GetOutput() const
 {
-  return _output;
+  return _heaterOutput;
 }
 
 void iDryer::SetOutput(float output)
 {
-  _output = output;
-  _dimmer = uint16_t(math::map_to_range_with_clamp(output, pid.GetMinOutput(), pid.GetMaxOutput(), HEATER_MAX, HEATER_MIN));
+  _heaterOutput = output;
+  _dimmer = uint16_t(heaterPid.GetMappedOutput(HEATER_MAX, HEATER_MIN));
 }
 
 uint16_t iDryer::getPulseWidth() const
@@ -98,71 +98,87 @@ bool iDryer::getData()
 
 void iDryer::Setpoint()
 {
-  auto currentTemp = data.airTempCorrected; // Текущая температура
-  float desiredTemp = data.setTemp;         // Заданная температура
-  float deltaT = data.deltaT;               // Дополнительный коэффициент для агрессивного нагрева
+  _time = data.timestamp / float(math::msCountInSec); // Текущее время
+  _currentAirTemp = data.airTempCorrected;            // Текущая температура
+  _targetAirTemp = data.setTemp;                      // Заданная температура
+  _currentHeaterTemp = data.ntcTemp;                  // Текущая температура нагревателя
 
-  auto delta = desiredTemp - currentTemp;
-  auto adjustment = math::map_to_range_with_clamp(delta, 0.0f, HEATING_THRESHOLD, HEATER_AIR_DELTA, deltaT);
+  auto airTempError = _targetAirTemp - _currentAirTemp;
+  airPid.Process(_time, airTempError);
 
-  if (delta < 0.0f)
+  if (airPid.IsOutputUpdated())
   {
-    adjustment -= math::map_to_range_with_clamp(abs(delta), 0.0f, 1.0f, 0.0f, HEATING_THRESHOLD);
-  }
-
-  _setpoint = desiredTemp + adjustment;
-
-  if (_setpoint > TMP_MAX)
-  {
-    _setpoint = TMP_MAX;
+    _targetHeaterTemp = airPid.GetMappedOutput(0.0f, _targetAirTemp + data.deltaT);
   }
 
   // Отключение при критическом перегреве
-  if (currentTemp >= desiredTemp + CRITICAL_OVERHEAT)
+  if (_currentAirTemp >= _targetAirTemp + CRITICAL_OVERHEAT)
   {
-    _setpoint = 0;
+    _targetHeaterTemp = 0;
   }
 
-  _input = data.ntcTemp;
+  auto heaterTempError = _targetHeaterTemp - _currentHeaterTemp;
+  heaterPid.Process(_time, heaterTempError);
 
-  auto timeInSeconds = data.timestamp / float(math::msCountInSec);
-  auto heaterTempError = _setpoint - _input;
-  pid.Process(timeInSeconds, heaterTempError);
-
-  if (pid.IsOutputUpdated())
+  if (heaterPid.IsOutputUpdated())
   {
-    SetOutput(pid.GetOutput());
+    SetOutput(heaterPid.GetOutput());
 
-    if (_setpoint == 0)
+    if (_targetHeaterTemp == 0)
     {
       _dimmer = HEATER_OFF;
     }
 
-#if KASYAK_FINDER && DRY_LOGS
+#if KASYAK_FINDER && DRY_AIR_LOGS
     Serial.print(" t: ");
     Serial.print(data.timestamp);
     Serial.print(" d: ");
-    Serial.print(delta, 2);
-    Serial.print(" a: ");
-    Serial.print(adjustment, 2);
+    Serial.print(airTempError, 2);
     Serial.print(" t: ");
-    Serial.print(currentTemp, 2);
+    Serial.print(_currentAirTemp, 2);
     Serial.print(" s: ");
-    Serial.print(_setpoint, 2);
+    Serial.print(_targetHeaterTemp, 2);
     Serial.print(" n: ");
-    Serial.print(_input, 2);
+    Serial.print(_currentHeaterTemp, 2);
     Serial.print(" dt: ");
-    Serial.print(pid.GetDeltaTime(), 3);
+    Serial.print(airPid.GetDeltaTime(), 3);
     Serial.print(" pt: ");
-    Serial.print(pid.GetProportionalTerm(), 3);
+    Serial.print(airPid.GetProportionalTerm(), 3);
     Serial.print(" it: ");
-    Serial.print(pid.GetIntegralTerm(), 3);
+    Serial.print(airPid.GetIntegralTerm(), 3);
     Serial.print(" dt: ");
-    Serial.print(pid.GetDerivativeTerm(), 3);
+    Serial.print(airPid.GetDerivativeTerm(), 3);
     Serial.print(" ft: ");
-    Serial.print(pid.GetFilterTerm(), 2);
+    Serial.print(airPid.GetFilterTerm(), 2);
     Serial.print(" o: ");
-    Serial.print(pid.GetOutput(), 2);
+    Serial.print(airPid.GetOutput(), 2);
+    Serial.println();
+    Serial.flush();
+#endif
+
+#if KASYAK_FINDER && DRY_HEATER_LOGS
+    Serial.print(" t: ");
+    Serial.print(data.timestamp);
+    Serial.print(" d: ");
+    Serial.print(airTempError, 2);
+    Serial.print(" t: ");
+    Serial.print(_currentAirTemp, 2);
+    Serial.print(" s: ");
+    Serial.print(_targetHeaterTemp, 2);
+    Serial.print(" n: ");
+    Serial.print(_currentHeaterTemp, 2);
+    Serial.print(" dt: ");
+    Serial.print(heaterPid.GetDeltaTime(), 3);
+    Serial.print(" pt: ");
+    Serial.print(heaterPid.GetProportionalTerm(), 3);
+    Serial.print(" it: ");
+    Serial.print(heaterPid.GetIntegralTerm(), 3);
+    Serial.print(" dt: ");
+    Serial.print(heaterPid.GetDerivativeTerm(), 3);
+    Serial.print(" ft: ");
+    Serial.print(heaterPid.GetFilterTerm(), 2);
+    Serial.print(" o: ");
+    Serial.print(heaterPid.GetOutput(), 2);
     Serial.print(" d: ");
     Serial.print(_dimmer);
     Serial.println();

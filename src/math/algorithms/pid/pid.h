@@ -39,6 +39,7 @@ namespace math::algorithms
     float GetDerivativeTerm() const;
     float GetFilterTerm() const;
     float GetOutput() const;
+    float GetMappedOutput(float lowerBound, float upperBound) const;
     float GetMinOutput() const;
     float GetMaxOutput() const;
 

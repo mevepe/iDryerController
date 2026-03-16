@@ -42,6 +42,11 @@ namespace math::algorithms
     return _output;
   }
 
+  float PIDController::GetMappedOutput(float lowerBound, float upperBound) const
+  {
+    return math::map_to_range_with_clamp(_output, _minOutput, _maxOutput, lowerBound, upperBound);
+  }
+
   float PIDController::GetMinOutput() const
   {
     return _minOutput;

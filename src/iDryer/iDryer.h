@@ -53,9 +53,21 @@ class iDryer
 public:
   State state = OFF;
   Data data;
-  PIDController pid;
+  PIDController airPid;
+  PIDController heaterPid;
 
 private:
+  unsigned long _lastScreenUpdateTimestamp = 0;
+
+  float _time = 0;
+  float _targetAirTemp = 0;
+  float _currentAirTemp = 0;
+  float _targetHeaterTemp = 0;
+  float _currentHeaterTemp = 0;
+  float _heaterOutput = 0;
+
+  uint16_t _dimmer = 0;
+
   thermistor &_ntc;
 
 #ifdef SENSOR_BME280
@@ -63,14 +75,6 @@ private:
 #else
   SHT31 &sht;
 #endif
-
-  unsigned long _lastScreenUpdateTimestamp = 0;
-
-  float _setpoint = 0;
-  float _input = 0;
-  float _output = 0;
-
-  uint16_t _dimmer = 0;
 
 public:
 #ifdef SENSOR_BME280

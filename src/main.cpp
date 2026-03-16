@@ -990,11 +990,11 @@ void updateIDryerData()
     dryer.data.setHumidity = eeprom_read_word(&menuVal[DEF_STORAGE_HUMIDITY]);
     dryer.data.setFan = eeprom_read_word(&menuVal[DEF_SETTINGS_BLOWING]);
 
-    dryer.pid.SetMinDeltaTime(dryer.data.minDeltaTime);
-    dryer.pid.SetProportionalGain(dryer.data.Kp);
-    dryer.pid.SetIntegralGain(dryer.data.Ki);
-    dryer.pid.SetDerivativeGain(dryer.data.Kd);
-    dryer.pid.SetFilterGain(dryer.data.Kf);
+    dryer.heaterPid.SetMinDeltaTime(dryer.data.minDeltaTime);
+    dryer.heaterPid.SetProportionalGain(dryer.data.Kp);
+    dryer.heaterPid.SetIntegralGain(dryer.data.Ki);
+    dryer.heaterPid.SetDerivativeGain(dryer.data.Kd);
+    dryer.heaterPid.SetFilterGain(dryer.data.Kf);
 
     servo.set(eeprom_read_word(&menuVal[DEF_SERVO_CLOSED]), eeprom_read_word(&menuVal[DEF_SERVO_OPEN]), eeprom_read_word(&menuVal[DEF_SERVO_CORNER]));
     WDT_DISABLE();
@@ -1435,8 +1435,8 @@ void autoPidFlow()
 {
     constexpr auto ntcUpdateInterval = (uint32_t)(0.005f * math::usCountInSec);
 
-    auto minOutput = dryer.pid.GetMinOutput();
-    auto maxOutput = dryer.pid.GetMaxOutput();
+    auto minOutput = dryer.heaterPid.GetMinOutput();
+    auto maxOutput = dryer.heaterPid.GetMaxOutput();
     auto minDeltaTimeMicroseconds = uint32_t(dryer.data.minDeltaTime * math::usCountInSec);
 
     PIDAutotuner tuner;
