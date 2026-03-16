@@ -1,14 +1,8 @@
 #include "iDryer.h"
 
-#ifdef SENSOR_BME280
-iDryer::iDryer(thermistor &ntc, GyverBME280 &bme) : _ntc(ntc), _bme(bme)
+iDryer::iDryer(thermistor &heaterTempSensor, AirTempSensor &airTempSensor) : _heaterTempSensor(heaterTempSensor), _airTempSensor(airTempSensor)
 {
 }
-#else
-iDryer::iDryer(thermistor &ntc, SHT31 &sht) : _ntc(ntc), _sht(sht)
-{
-}
-#endif
 
 float iDryer::GetSetpoint() const
 {
@@ -38,20 +32,20 @@ bool iDryer::IsHeatingAllowed() const
 bool iDryer::getData()
 {
   data.timestamp = millis();
-  data.ntcTemp = (_ntc.analog2temp() + data.ntcTemp) / 2.0f;
+  data.ntcTemp = (_heaterTempSensor.analog2temp() + data.ntcTemp) / 2.0f;
 
 #ifdef SENSOR_SHT31
-  if (_sht.dataReady())
+  if (_airTempSensor.dataReady())
   {
-    _sht.read();
-    data.airTemp = (_sht.getTemperature() + data.airTemp) / 2.0f;
-    data.airHumidity = (_sht.getHumidity() + data.airHumidity) / 2.0f;
+    _airTempSensor.read();
+    data.airTemp = (_airTempSensor.getTemperature() + data.airTemp) / 2.0f;
+    data.airHumidity = (_airTempSensor.getHumidity() + data.airHumidity) / 2.0f;
   }
 #endif
 
 #ifdef SENSOR_BME280
-  data.airTemp = (_bme.readTemperature() + data.airTemp) / 2.0f;
-  data.airHumidity = (_bme.readHumidity() + data.airHumidity) / 2.0f;
+  data.airTemp = (_airTempSensor.readTemperature() + data.airTemp) / 2.0f;
+  data.airHumidity = (_airTempSensor.readHumidity() + data.airHumidity) / 2.0f;
 #endif
 
   data.airTempCorrected = data.airTemp;

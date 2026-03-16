@@ -12,6 +12,12 @@
 
 using math::algorithms::PIDController;
 
+#ifdef SENSOR_BME280
+#define AirTempSensor GyverBME280
+#else
+#define AirTempSensor SHT31
+#endif
+
 enum State
 {
   OFF,
@@ -68,20 +74,11 @@ private:
 
   uint16_t _dimmer = 0;
 
-  thermistor &_ntc;
-
-#ifdef SENSOR_BME280
-  GyverBME280 &_bme;
-#else
-  SHT31 &sht;
-#endif
+  thermistor &_heaterTempSensor;
+  AirTempSensor &_airTempSensor;
 
 public:
-#ifdef SENSOR_BME280
-  iDryer(thermistor &ntc, GyverBME280 &bme);
-#else
-  iDryer(thermistor &ntc, SHT31 &sht);
-#endif
+  iDryer(thermistor &heaterTempSensor, AirTempSensor &airTempSensor);
 
   float GetSetpoint() const;
 
