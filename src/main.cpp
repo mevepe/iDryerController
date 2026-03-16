@@ -624,7 +624,7 @@ void setup()
     uint8_t i = 10;
     while (i)
     {
-        dryer.getData();
+        dryer.UpdateData();
         i--;
     }
 
@@ -990,6 +990,7 @@ void updateIDryerData()
     dryer.data.setHumidity = eeprom_read_word(&menuVal[DEF_STORAGE_HUMIDITY]);
     dryer.data.setFan = eeprom_read_word(&menuVal[DEF_SETTINGS_BLOWING]);
 
+    dryer.airPid.SetMinDeltaTime(dryer.data.minDeltaTime);
     dryer.heaterPid.SetMinDeltaTime(dryer.data.minDeltaTime);
     dryer.heaterPid.SetProportionalGain(dryer.data.Kp);
     dryer.heaterPid.SetIntegralGain(dryer.data.Ki);
@@ -1227,7 +1228,7 @@ void drawLine(const char *text, int lineIndex, bool background, bool center, int
 
 void getData()
 {
-    if (!dryer.getData())
+    if (!dryer.UpdateData())
     {
         ERROR_COUNTER++;
         if (ERROR_COUNTER > MAX_ERROR)

@@ -89,7 +89,7 @@ public:
 
   bool IsHeatingAllowed() const;
 
-  bool getData();
+  bool UpdateData();
 
   void Setpoint();
 };

@@ -29,7 +29,7 @@ bool iDryer::IsHeatingAllowed() const
   return (state == DRY || state == STORAGE || state == AUTOPID) && _dimmer >= HEATER_MIN && _dimmer < HEATER_OFF;
 }
 
-bool iDryer::getData()
+bool iDryer::UpdateData()
 {
   data.timestamp = millis();
   data.ntcTemp = (_heaterTempSensor.analog2temp() + data.ntcTemp) / 2.0f;
