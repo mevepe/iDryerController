@@ -29,29 +29,29 @@ app = QtWidgets.QApplication([])
 win = pg.GraphicsLayoutWidget(show=True)
 win.setWindowTitle("Realtime log plot")
 
-plot = win.addPlot(title="a(t), s(t), n(t)")
-plot.setTitle("a(t), s(t), n(t)", color='w')   # заголовок чёрный
+def create_plot(title, row, col, x_label, y_label, x_units, y_units):
+    plot = win.addPlot(title=title, row=row, col=col)
+    plot.setLabel('left',  text=y_label, units=y_units)
+    plot.setLabel('bottom', text=x_label, units=x_units)
+    plot.addLegend(labelTextColor='k')
+    plot.getViewBox().setBackgroundColor('w')
+    plot.showGrid(x=True, y=True, alpha=0.5)
+    return plot
 
-plot.setLabel('left',  text='values', color='w')
-plot.setLabel('bottom', text='time', units='mins', color='w')
+plot_01 = create_plot("Air, NTC, Setpoint", 0, 0, "time", "values", "mins", None)
+plot_02 = create_plot("PID", 1, 0, "time", "values", "mins", None)
+plot_03 = create_plot("Errors", 0, 1, "time", "values", "mins", None)
 
-plot.addLegend(labelTextColor='k')             # легенда чёрная
+curve_at = plot_01.plot(pen=pg.mkPen('r', width=3), name="a(t)")
+curve_st = plot_01.plot(pen=pg.mkPen('g', width=3), name="s(t)")
+curve_nt = plot_01.plot(pen=pg.mkPen('b', width=3), name="n(t)")
 
-plot.getViewBox().setBackgroundColor('w')
+curve_pt = plot_02.plot(pen=pg.mkPen('r', width=3), name="p(t)")
+curve_it = plot_02.plot(pen=pg.mkPen('g', width=3), name="i(t)")
+curve_ot = plot_02.plot(pen=pg.mkPen('b', width=3), name="o(t)")
 
-plot.showGrid(x=True, y=True, alpha=0.5)
-
-# black_pen = pg.mkPen(color='k', width=1)
-# plot.getAxis('bottom').setPen(black_pen)
-# plot.getAxis('left').setPen(black_pen)
-# plot.getAxis('bottom').setTextPen(black_pen)
-# plot.getAxis('left').setTextPen(black_pen)
-# plot.getAxis('bottom').gridPen = black_pen
-# plot.getAxis('left').gridPen = black_pen
-
-curve_at = plot.plot(pen=pg.mkPen('r', width=3), name="a(t)")
-curve_st = plot.plot(pen=pg.mkPen('g', width=3), name="s(t)")
-curve_nt = plot.plot(pen=pg.mkPen('b', width=3), name="n(t)")
+curve_aet = plot_03.plot(pen=pg.mkPen('r', width=3), name="ae(t)")
+curve_net = plot_03.plot(pen=pg.mkPen('g', width=3), name="ne(t)")
 
 def update():
     global time_data, s_data
@@ -81,9 +81,18 @@ def update():
               
         columns["t"] = np.array(columns["t"]) - columns["t"][0]
         columns["t"] = columns["t"] / 1000.0 / 60.0
+        columns["ne"] = np.array(columns["s"]) - np.array(columns["n"])
+        
         curve_at.setData(columns["t"], columns["at"])
         curve_st.setData(columns["t"], columns["s"])
         curve_nt.setData(columns["t"], columns["n"])
+        
+        curve_pt.setData(columns["t"], columns["ppt"])
+        curve_it.setData(columns["t"], columns["pit"])
+        curve_ot.setData(columns["t"], columns["po"])
+        
+        curve_aet.setData(columns["t"], columns["d"])
+        curve_net.setData(columns["t"], columns["ne"])
 
     except Exception as e:
         print("read error:", e)
