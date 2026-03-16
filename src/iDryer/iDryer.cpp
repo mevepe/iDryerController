@@ -5,7 +5,7 @@ iDryer::iDryer(thermistor &heaterTempSensor, AirTempSensor &airTempSensor) : _he
   auto outputRange = airPid.GetMaxOutput() - airPid.GetMinOutput();
 
   airPid.SetProportionalGain(outputRange / HEATING_THRESHOLD); // максимальная температура нагревателя до достижения границы агрессивного нагрева
-  airPid.SetIntegralGain(0.01);
+  airPid.SetIntegralGain(0.001f); // небольшая интегральная составляющая для устранения статической ошибки
   airPid.SetDerivativeGain(0.0f); // используем PI регулятор для температуры воздуха
 }
 
@@ -138,7 +138,7 @@ void iDryer::Setpoint()
     Serial.print(data.timestamp);
     Serial.print(" d: ");
     Serial.print(airTempError, 2);
-    Serial.print(" t: ");
+    Serial.print(" at: ");
     Serial.print(_currentAirTemp, 2);
     Serial.print(" s: ");
     Serial.print(_targetHeaterTemp, 2);
@@ -146,15 +146,15 @@ void iDryer::Setpoint()
     Serial.print(_currentHeaterTemp, 2);
     Serial.print(" dt: ");
     Serial.print(airPid.GetDeltaTime(), 3);
-    Serial.print(" pt: ");
+    Serial.print(" ppt: ");
     Serial.print(airPid.GetProportionalTerm(), 3);
-    Serial.print(" it: ");
+    Serial.print(" pit: ");
     Serial.print(airPid.GetIntegralTerm(), 3);
-    Serial.print(" dt: ");
+    Serial.print(" pdt: ");
     Serial.print(airPid.GetDerivativeTerm(), 3);
-    Serial.print(" ft: ");
+    Serial.print(" pft: ");
     Serial.print(airPid.GetFilterTerm(), 2);
-    Serial.print(" o: ");
+    Serial.print(" po: ");
     Serial.print(airPid.GetOutput(), 2);
     Serial.println();
     Serial.flush();
