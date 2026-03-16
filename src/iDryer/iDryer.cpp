@@ -5,7 +5,7 @@ iDryer::iDryer(thermistor &heaterTempSensor, AirTempSensor &airTempSensor) : _he
   auto outputRange = airPid.GetMaxOutput() - airPid.GetMinOutput();
 
   airPid.SetProportionalGain(outputRange / HEATING_THRESHOLD); // максимальная температура нагревателя до достижения границы агрессивного нагрева
-  airPid.SetIntegralGain(outputRange / HEATING_THRESHOLD);
+  airPid.SetIntegralGain(0.01);
   airPid.SetDerivativeGain(0.0f); // используем PI регулятор для температуры воздуха
 }
 
