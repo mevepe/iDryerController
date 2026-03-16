@@ -22,7 +22,7 @@ float iDryer::GetOutput() const
 void iDryer::SetOutput(float output)
 {
   _output = output;
-  _dimmer = uint16_t(math::map_to_range_with_clamp(output, pid.GetMinOutput(), pid.GetMaxOutput(), HEATER_MIN, HEATER_MAX));
+  _dimmer = uint16_t(math::map_to_range_with_clamp(output, pid.GetMinOutput(), pid.GetMaxOutput(), HEATER_MAX, HEATER_MIN));
 }
 
 uint16_t iDryer::getPulseWidth() const
