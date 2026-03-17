@@ -156,13 +156,13 @@ void iDryer::Setpoint()
     Serial.print(currentHeaterTemp, 2);
     Serial.print(" dt: ");
     Serial.print(airPid.GetDeltaTime(), 3);
-    Serial.print(" ppt: ");
+    Serial.print(" pp: ");
     Serial.print(airPid.GetProportionalTerm(), 3);
-    Serial.print(" pit: ");
+    Serial.print(" pi: ");
     Serial.print(airPid.GetIntegralTerm(), 3);
-    Serial.print(" pdt: ");
+    Serial.print(" pd: ");
     Serial.print(airPid.GetDerivativeTerm(), 3);
-    Serial.print(" pft: ");
+    Serial.print(" pf: ");
     Serial.print(airPid.GetFilterTerm(), 2);
     Serial.print(" po: ");
     Serial.print(airPid.GetOutput(), 2);
@@ -171,6 +171,21 @@ void iDryer::Setpoint()
 #endif
 
 #if KASYAK_FINDER && DRY_HEATER_LOGS
+    if (Serial.available())
+    {
+      auto input = Serial.readStringUntil('\n');
+      auto kp = 0.0f;
+      auto ki = 0.0f;
+      auto kd = 0.0f;
+
+      if (sscanf(input.c_str(), "%f %f %f", &kp, &ki, &kd) == 3)
+      {
+        heaterPid.SetProportionalGain(kp);
+        heaterPid.SetIntegralGain(ki);
+        heaterPid.SetDerivativeGain(kd);
+      }
+    }
+
     Serial.print(" t: ");
     Serial.print(data.timestamp);
     Serial.print(" d: ");
@@ -183,18 +198,14 @@ void iDryer::Setpoint()
     Serial.print(currentHeaterTemp, 2);
     Serial.print(" dt: ");
     Serial.print(heaterPid.GetDeltaTime(), 3);
-    Serial.print(" ppt: ");
+    Serial.print(" pp: ");
     Serial.print(heaterPid.GetProportionalTerm(), 3);
-    Serial.print(" pit: ");
+    Serial.print(" pi: ");
     Serial.print(heaterPid.GetIntegralTerm(), 3);
-    Serial.print(" pdt: ");
+    Serial.print(" pd: ");
     Serial.print(heaterPid.GetDerivativeTerm(), 3);
-    Serial.print(" pft: ");
-    Serial.print(heaterPid.GetFilterTerm(), 2);
     Serial.print(" po: ");
     Serial.print(heaterPid.GetOutput(), 2);
-    Serial.print(" d: ");
-    Serial.print(_dimmer);
     Serial.println();
     Serial.flush();
 #endif

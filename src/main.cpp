@@ -226,7 +226,6 @@ filamentExpense filamentExpenseFlag[SCALES_MODULE_NUM] = {UPDATE_DATA};
 #endif
 
 /* 01 */ void heaterOFF();
-/* 03 */ void heaterON();
 void fanMAX();
 void fanOFF();
 void fanON(int percent);
@@ -679,7 +678,7 @@ void loop()
         break;
 #endif
 
-#if SCALES_MODULE_NUM == 0
+#if SCALES_MODULE_NUM == 0 && !(KASYAK_FINDER == 1 && DRY_HEATER_LOGS == 1)
     case AUTOPID:
         autoPidFlow();
         break;
@@ -899,7 +898,6 @@ void dryStart()
     scaleTimer = millis();
 
     updateIDryerData();
-    heaterON();
 
     dryer.state = DRY;
 
@@ -941,7 +939,6 @@ void autoPidStart()
     WDT(WDTO_500MS, 12);
 
     updateIDryerData();
-    heaterON();
 
     dryer.state = AUTOPID;
     dryer.data.flag = true;
@@ -1042,14 +1039,10 @@ void async_piii(uint16_t time_ms)
     buzzer.buzz(time_ms);
 }
 
-void heaterON()
+void heaterOFF()
 {
-    WDT(WDTO_250MS, 3);
-
-#ifdef HEATER_ON_SOUND_NOTIFICATION
-    piii(100);
-#endif
-
+    WDT(WDTO_250MS, 1);
+    digitalWrite(DIMMER_PIN, 0);
     WDT_DISABLE();
 }
 
@@ -1066,13 +1059,6 @@ void fanOFF()
 void fanON(int percent)
 {
     analogWrite(FAN, map(percent, 0, 100, 0, 255));
-}
-
-void heaterOFF()
-{
-    WDT(WDTO_250MS, 1);
-    digitalWrite(DIMMER_PIN, 0);
-    WDT_DISABLE();
 }
 
 void pwm_test()
@@ -1404,7 +1390,6 @@ void storageFlow()
         {
             dryer.data.flag = true;
             fanON(dryer.data.setFan);
-            heaterON();
         }
     }
 
