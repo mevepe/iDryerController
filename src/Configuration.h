@@ -163,16 +163,6 @@ aprox 1min per attempt
  ********************/
 #define AUTOPID_ATTEMPT 10
 
-/**********************
-Manual PID setup
-if OVERWRITE_PID - 0, pid, after burning, will be default
- **********************/
-#define OVERWRITE_PID 0
-#define K_PROPRTIONAL 20     //
-#define K_INTEGRAL 1         //
-#define K_DERIVATIVE 40      //
-#define K_FILTER 40          //
-#define K_MIN_DELTA_TIME 300 //
 /*********************
 Pid type
 P_ON_M specifies that Proportional on Measurement be used

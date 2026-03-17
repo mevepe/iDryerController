@@ -13,20 +13,20 @@ float iDryer::GetSetpoint() const
 {
   return _targetHeaterTemp;
 }
+
 float iDryer::GetOutput() const
 {
-  return _heaterOutput;
+  return heaterPid.GetOutput();
 }
 
-void iDryer::SetOutput(float output)
-{
-  _heaterOutput = output;
-  _dimmer = uint16_t(heaterPid.GetMappedOutput(output, HEATER_MAX, HEATER_MIN));
-}
-
-uint16_t iDryer::getPulseWidth() const
+uint16_t iDryer::GetPulseWidth() const
 {
   return _dimmer;
+}
+
+void iDryer::SetPulseWidth(uint16_t pulseWidth)
+{
+  _dimmer = pulseWidth;
 }
 
 bool iDryer::IsHeatingAllowed() const
@@ -43,7 +43,6 @@ void iDryer::Reset()
   _currentAirTemp = 0;
   _targetHeaterTemp = 0;
   _currentHeaterTemp = 0;
-  _heaterOutput = 0;
 
   data = {};
   airPid.Reset();
@@ -143,7 +142,7 @@ void iDryer::Setpoint()
 
   if (heaterPid.IsOutputUpdated())
   {
-    SetOutput(heaterPid.GetOutput());
+    _dimmer = uint16_t(heaterPid.GetMappedOutput(HEATER_MAX, HEATER_MIN));
 
     if (_targetHeaterTemp == 0)
     {

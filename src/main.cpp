@@ -285,7 +285,7 @@ iDryer dryer(ntc, bme);
 iDryer dryer(ntc, sht);
 #endif
 
-uint32_t zero_impulse_count = 0;
+uint8_t zero_impulse_count = 0;
 Servo servo;
 
 BuzzerController buzzer(BUZZER_PIN);
@@ -307,7 +307,7 @@ void on_zero_crossing()
 
     if (dryer.IsHeatingAllowed() && servo.getState() != MOVE) // Проверка режимы работы для включения нагревателя и что сервопривод не в движении
     {
-        Timer1.setPeriod(dryer.getPulseWidth()); // Установка времени до включения нагревателя
+        Timer1.setPeriod(dryer.GetPulseWidth()); // Установка времени до включения нагревателя
     }
     else if (servo.getState() == MOVE)
     {
@@ -575,14 +575,6 @@ void setup()
         {
         }
     }
-
-#if OVERWRITE_PID == 1
-    eeprom_update_word(&menuVal[DEF_PID_KP], K_PROPRTIONAL);
-    eeprom_update_word(&menuVal[DEF_PID_KI], K_INTEGRAL);
-    eeprom_update_word(&menuVal[DEF_PID_KD], K_DERIVATIVE);
-    eeprom_update_word(&menuVal[DEF_PID_KF], K_FILTER);
-    eeprom_update_word(&menuVal[DEF_MIN_PID_DELTA_TIME_MS], K_MIN_DELTA_TIME);
-#endif
 
     updateIDryerData();
 
@@ -965,23 +957,24 @@ void updateIDryerData()
     WDT(WDTO_250MS, 4);
     dryer.Reset();
 
-    dryer.data.Kp = eeprom_read_word(&menuVal[DEF_PID_KP]) / DEF_PID_KP_DIV;
-    dryer.data.Ki = eeprom_read_word(&menuVal[DEF_PID_KI]) / DEF_PID_KI_DIV;
-    dryer.data.Kd = eeprom_read_word(&menuVal[DEF_PID_KD]) / DEF_PID_KD_DIV;
-    dryer.data.Kf = eeprom_read_word(&menuVal[DEF_PID_KF]) / DEF_PID_KF_DIV;
-    dryer.data.minDeltaTime = eeprom_read_word(&menuVal[DEF_MIN_PID_DELTA_TIME_MS]) / DEF_MIN_PID_DELTA_TIME_MS_DIV;
+    auto kp = eeprom_read_word(&menuVal[DEF_PID_KP]) / DEF_PID_KP_DIV;
+    auto ki = eeprom_read_word(&menuVal[DEF_PID_KI]) / DEF_PID_KI_DIV;
+    auto kd = eeprom_read_word(&menuVal[DEF_PID_KD]) / DEF_PID_KD_DIV;
+    auto kf = eeprom_read_word(&menuVal[DEF_PID_KF]) / DEF_PID_KF_DIV;
+    auto minDeltaTime = eeprom_read_word(&menuVal[DEF_MIN_PID_DELTA_TIME_MS]) / DEF_MIN_PID_DELTA_TIME_MS_DIV;
+
     dryer.data.deltaT = eeprom_read_word(&menuVal[DEF_SETTINGS_DELTA]);
     dryer.data.setHumidity = eeprom_read_word(&menuVal[DEF_STORAGE_HUMIDITY]);
     dryer.data.setFan = eeprom_read_word(&menuVal[DEF_SETTINGS_BLOWING]);
 
-    dryer.airPid.SetMinDeltaTime(dryer.data.minDeltaTime);
-    dryer.airPid.SetFilterGain(dryer.data.Kf);
+    dryer.airPid.SetMinDeltaTime(minDeltaTime);
+    dryer.airPid.SetFilterGain(kf);
 
-    dryer.heaterPid.SetMinDeltaTime(dryer.data.minDeltaTime);
-    dryer.heaterPid.SetProportionalGain(dryer.data.Kp);
-    dryer.heaterPid.SetIntegralGain(dryer.data.Ki);
-    dryer.heaterPid.SetDerivativeGain(dryer.data.Kd);
-    dryer.heaterPid.SetFilterGain(dryer.data.Kf);
+    dryer.heaterPid.SetMinDeltaTime(minDeltaTime);
+    dryer.heaterPid.SetProportionalGain(kp);
+    dryer.heaterPid.SetIntegralGain(ki);
+    dryer.heaterPid.SetDerivativeGain(kd);
+    dryer.heaterPid.SetFilterGain(kf);
 
     servo.set(eeprom_read_word(&menuVal[DEF_SERVO_CLOSED]), eeprom_read_word(&menuVal[DEF_SERVO_OPEN]), eeprom_read_word(&menuVal[DEF_SERVO_CORNER]));
     WDT_DISABLE();
@@ -1424,7 +1417,7 @@ void autoPidFlow()
 
     auto minOutput = dryer.heaterPid.GetMinOutput();
     auto maxOutput = dryer.heaterPid.GetMaxOutput();
-    auto minDeltaTimeMicroseconds = uint32_t(dryer.data.minDeltaTime * math::usCountInSec);
+    auto minDeltaTimeMicroseconds = uint32_t(dryer.heaterPid.GetMinDeltaTime() * math::usCountInSec);
     auto minSafeTimeMicroseconds = uint32_t(10.0f * math::usCountInSec);
 
     PIDAutotuner tuner;
@@ -1442,7 +1435,7 @@ void autoPidFlow()
     }
 
     WDT_DISABLE();
-    dryer.SetOutput(0);
+    dryer.SetPulseWidth(HEATER_OFF);
 
     oled.clear();
     getData();
@@ -1494,7 +1487,8 @@ void autoPidFlow()
 
         previousMicroseconds = currentMicroseconds;
 
-        dryer.SetOutput(tuner.tunePID(dryer.data.ntcTemp, currentMicroseconds));
+        auto output = tuner.tunePID(dryer.data.ntcTemp, currentMicroseconds);
+        dryer.SetPulseWidth(uint16_t(math::map_to_range_with_clamp(output, minOutput, maxOutput, HEATER_MAX, HEATER_MIN)));
 
 #if KASYAK_FINDER && AUTOPID_LOGS
         Serial.print(" t: ");
@@ -1519,6 +1513,8 @@ void autoPidFlow()
         Serial.flush();
 #endif
     }
+
+    dryer.SetPulseWidth(HEATER_OFF);
 
     heaterOFF();
     fanMAX();

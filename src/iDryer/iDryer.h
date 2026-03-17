@@ -45,11 +45,6 @@ struct Data
   bool flagScreenUpdate = false;
   bool flagTimeCounter = false;
   uint8_t setFan = 0;
-  float Kp = 0;
-  float Ki = 0;
-  float Kd = 0;
-  float Kf = 0;
-  float minDeltaTime = 0;
   uint8_t deltaT = 0;
 };
 
@@ -70,7 +65,6 @@ private:
   float _currentAirTemp = 0;
   float _targetHeaterTemp = 0;
   float _currentHeaterTemp = 0;
-  float _heaterOutput = 0;
 
   uint16_t _dimmer = 0;
 
@@ -83,9 +77,9 @@ public:
   float GetSetpoint() const;
 
   float GetOutput() const;
-  void SetOutput(float output);
 
-  uint16_t getPulseWidth() const;
+  uint16_t GetPulseWidth() const;
+  void SetPulseWidth(uint16_t pulseWidth);
 
   bool IsHeatingAllowed() const;
 
