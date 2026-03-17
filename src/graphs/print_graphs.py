@@ -40,8 +40,7 @@ def create_plot(title, row, col, x_label, y_label, x_units, y_units):
 
 plot_01 = create_plot("Air, NTC, Setpoint", 0, 0, "time", "values", "mins", None)
 plot_02 = create_plot("PID", 1, 0, "time", "values", "mins", None)
-plot_03 = create_plot("Errors", 0, 1, "time", "values", "mins", None)
-plot_04 = create_plot("Autopid", 1, 1, "time", "values", "mins", None)
+plot_03 = create_plot("Errors", 2, 0, "time", "values", "mins", None)
 
 curve_air_temp = plot_01.plot(pen=pg.mkPen('r', width=3), name="Air temp")
 curve_setpoint = plot_01.plot(pen=pg.mkPen('g', width=3), name="Setpoint")
@@ -49,13 +48,14 @@ curve_heater_temp = plot_01.plot(pen=pg.mkPen('b', width=3), name="Heater temp")
 
 curve_pid_p_term = plot_02.plot(pen=pg.mkPen('r', width=3), name="pTerm")
 curve_pid_i_term = plot_02.plot(pen=pg.mkPen('g', width=3), name="iTerm")
+curve_pid_d_term = plot_02.plot(pen=pg.mkPen('y', width=3), name="dTerm")
 curve_pid_output = plot_02.plot(pen=pg.mkPen('b', width=3), name="Output")
 
 curve_errors_air_temp = plot_03.plot(pen=pg.mkPen('r', width=3), name="Air temp error")
 curve_errors_heater_temp = plot_03.plot(pen=pg.mkPen('g', width=3), name="Heater temp error")
 
 # curve_autopid_output = plot_03.plot(pen=pg.mkPen('g', width=3), name="Output")
-curve_autopid_heater_temp = plot_04.plot(pen=pg.mkPen('r', width=3), name="Heater temp")
+# curve_autopid_heater_temp = plot_04.plot(pen=pg.mkPen('r', width=3), name="Heater temp")
 
 def update():
     global time_data, s_data
@@ -95,12 +95,13 @@ def update():
         
         curve_pid_p_term.setData(columns["t"], columns["ppt"])
         curve_pid_i_term.setData(columns["t"], columns["pit"])
+        curve_pid_d_term.setData(columns["t"], columns["pdt"])
         curve_pid_output.setData(columns["t"], columns["po"])
         
         curve_errors_air_temp.setData(columns["t"], columns["d"])
         curve_errors_heater_temp.setData(columns["t"], columns["ne"])
         
-        curve_autopid_heater_temp.setData(columns["t"], columns["n"])
+        # curve_autopid_heater_temp.setData(columns["t"], columns["n"])
         # curve_autopid_output.setData(columns["t"], columns["o"])
 
     except Exception as e:

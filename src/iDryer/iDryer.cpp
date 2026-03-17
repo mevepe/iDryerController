@@ -37,10 +37,8 @@ bool iDryer::IsHeatingAllowed() const
 void iDryer::Reset()
 {
   _lastScreenUpdateTimestamp = 0;
-
   _targetHeaterTemp = 0;
 
-  data = {};
   airPid.Reset();
   heaterPid.Reset();
 }
@@ -118,8 +116,8 @@ void iDryer::Setpoint()
 
   if (airPid.IsOutputUpdated())
   {
-    _targetHeaterTemp = targetAirTemp - HEATING_THRESHOLD;         // Целевая температура нагревателя
-    _targetHeaterTemp += airPid.GetMappedOutput(0.0f, data.deltaT); // Компенсация статической ошибки
+    _targetHeaterTemp = targetAirTemp;                                            // Целевая температура нагревателя
+    _targetHeaterTemp += airPid.GetMappedOutput(-HEATING_THRESHOLD, data.deltaT); // Компенсация статической ошибки
   }
 
   if (_targetHeaterTemp > TMP_MAX)
