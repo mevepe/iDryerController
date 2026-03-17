@@ -174,11 +174,22 @@ void iDryer::Setpoint()
     if (Serial.available())
     {
       auto input = Serial.readStringUntil('\n');
-      auto kp = 0.0f;
-      auto ki = 0.0f;
-      auto kd = 0.0f;
 
-      if (sscanf(input.c_str(), "%f %f %f", &kp, &ki, &kd) == 3)
+      auto ptr = input.c_str();
+      char *endPtr = nullptr;
+
+      auto kp = static_cast<float>(strtod(ptr, &endPtr));
+      auto kpParsed = ptr != endPtr;
+      ptr = endPtr;
+
+      auto ki = static_cast<float>(strtod(ptr, &endPtr));
+      auto kiParsed = ptr != endPtr;
+      ptr = endPtr;
+      
+      auto kd = static_cast<float>(strtod(ptr, &endPtr));
+      auto kdParsed = ptr != endPtr;
+
+      if (kpParsed && kiParsed && kdParsed)
       {
         heaterPid.SetProportionalGain(kp);
         heaterPid.SetIntegralGain(ki);
