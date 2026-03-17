@@ -37,21 +37,21 @@ private:
 public:
   Servo();
 
-  ServoState getState() const;
+  ServoState GetState() const;
 
-  uint16_t getPulseWidth() const;
+  uint16_t GetPulseWidth() const;
 
-  void set(uint16_t closedDuration, uint16_t openedDuration, uint16_t openedAngle);
+  void Set(uint16_t closedDuration, uint16_t openedDuration, uint16_t openedAngle);
 
-  void update();
+  void Update();
 
-  void toggle();
+  void Toggle();
 
-  void autotoggle();
+  void Autotoggle();
 
-  void open();
+  void Open();
   
-  void close();
+  void Close();
 };
 
 #endif // SERVO_H

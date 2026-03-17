@@ -273,7 +273,7 @@ void ntcErrorFlow();
 /* 29 */ // BME MAX
 /* 30 */ // ADC ERROR
 /* 0 */  // ADC ACCUMULATED ERROR
-/* 31 */ // dryer.getData
+/* 31 */ // dryer.UpdateData(Data
 void WDT(uint16_t time, uint8_t current_function_uuid);
 void WDT_DISABLE();
 void calibration();
@@ -293,7 +293,7 @@ BuzzerController buzzer(BUZZER_PIN);
 void servoTest()
 {
     updateIDryerData();
-    servo.toggle();
+    servo.Toggle();
 }
 
 void on_zero_crossing()
@@ -305,13 +305,13 @@ void on_zero_crossing()
         PORTD |= (1 << SERVO_1_PIN); // Включение сигнала для сервопривода
     }
 
-    if (dryer.IsHeatingAllowed() && servo.getState() != MOVE) // Проверка режимы работы для включения нагревателя и что сервопривод не в движении
+    if (dryer.IsHeatingAllowed() && servo.GetState() != MOVE) // Проверка режимы работы для включения нагревателя и что сервопривод не в движении
     {
         Timer1.setPeriod(dryer.GetPulseWidth()); // Установка времени до включения нагревателя
     }
-    else if (servo.getState() == MOVE)
+    else if (servo.GetState() == MOVE)
     {
-        Timer1.setPeriod(servo.getPulseWidth()); // Используем общий таймер для управления сервоприводом
+        Timer1.setPeriod(servo.GetPulseWidth()); // Используем общий таймер для управления сервоприводом
     }
 
     zero_impulse_count++;
@@ -319,11 +319,11 @@ void on_zero_crossing()
 
 ISR(TIMER1_A)
 {
-    if (dryer.IsHeatingAllowed() && servo.getState() != MOVE) // Проверка, что это таймер для нагревателя
+    if (dryer.IsHeatingAllowed() && servo.GetState() != MOVE) // Проверка, что это таймер для нагревателя
     {
         PORTD |= (1 << DIMMER_PIN); // Включение нагревателя
     }
-    else if (servo.getState() == MOVE)
+    else if (servo.GetState() == MOVE)
     {
         PORTD &= ~(1 << SERVO_1_PIN); // Обнуление интервала ШИМ для сервопривода
     }
@@ -638,7 +638,7 @@ void loop()
     // calibration();
     enc.tick();
     buzzer.update();
-    servo.update();
+    servo.Update();
 
     tmpTemp = (tmpTemp * 9 + analogRead(NTC_PIN)) / 10;
     if (tmpTemp <= ADC_MIN || tmpTemp >= ADC_MAX)
@@ -976,7 +976,7 @@ void updateIDryerData()
     dryer.heaterPid.SetDerivativeGain(kd);
     dryer.heaterPid.SetFilterGain(kf);
 
-    servo.set(eeprom_read_word(&menuVal[DEF_SERVO_CLOSED]), eeprom_read_word(&menuVal[DEF_SERVO_OPEN]), eeprom_read_word(&menuVal[DEF_SERVO_CORNER]));
+    servo.Set(eeprom_read_word(&menuVal[DEF_SERVO_CLOSED]), eeprom_read_word(&menuVal[DEF_SERVO_OPEN]), eeprom_read_word(&menuVal[DEF_SERVO_CORNER]));
     WDT_DISABLE();
 }
 
@@ -1319,7 +1319,7 @@ void dryFlow()
     setPoint();
     screenUpdate();
     fanON(dryer.data.setFan);
-    servo.autotoggle();
+    servo.Autotoggle();
 
     if (enc.hold())
     {
@@ -1358,7 +1358,7 @@ void storageFlow()
     getData();
     setPoint();
     screenUpdate();
-    servo.autotoggle();
+    servo.Autotoggle();
 
     if (enc.hold())
     {
@@ -1375,9 +1375,9 @@ void storageFlow()
 
         if (dryer.data.setTemp <= dryer.data.airTempCorrected && dryer.data.airHumidity <= dryer.data.setHumidity)
         {
-            if (servo.getState() == OPEN)
+            if (servo.GetState() == OPEN)
             {
-                servo.toggle();
+                servo.Toggle();
             }
 
             dryer.data.optimalConditionsReachedFlag = true;
@@ -1386,7 +1386,7 @@ void storageFlow()
     }
     else
     {
-        if (servo.getState() == CLOSED && dryer.data.optimalConditionsReachedFlag == true)
+        if (servo.GetState() == CLOSED && dryer.data.optimalConditionsReachedFlag == true)
         {
             dryer.data.optimalConditionsReachedFlag = false;
             heaterOFF();
@@ -1428,9 +1428,9 @@ void autoPidFlow()
     tuner.setTuningCycles(AUTOPID_ATTEMPT);
     tuner.setZNMode(PIDAutotuner::ZNModeBasicPID);
 
-    if (servo.getState() != CLOSED)
+    if (servo.GetState() != CLOSED)
     {
-        servo.close();
+        servo.Close();
         delay(3000);
     }
 
@@ -1508,7 +1508,7 @@ void autoPidFlow()
         Serial.print(" o: ");
         Serial.print(dryer.GetOutput(), 2);
         Serial.print(" d: ");
-        Serial.print(dryer.getPulseWidth());
+        Serial.print(dryer.GetPulseWidth());
         Serial.println();
         Serial.flush();
 #endif
@@ -1749,7 +1749,7 @@ void calibration()
     while (dryer.data.ntcTemp < 115 && dryer.data.airTemp < 110)
     {
         WDT(WDTO_250MS, 32);
-        dryer.getData();
+        dryer.UpdateData();
         WDT_DISABLE();
     }
 
@@ -1760,7 +1760,7 @@ void calibration()
     {
         WDT(WDTO_8S, 33);
 
-        dryer.getData();
+        dryer.UpdateData();
         uint8_t temp = (uint8_t)dryer.data.ntcTemp;
         uint8_t air_temp = (uint8_t)dryer.data.airTemp;
         uint8_t offset = 0;

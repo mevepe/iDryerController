@@ -5,30 +5,30 @@ Servo::Servo()
   _moveDuration = 1000; // Длительность изменения положения сервопривода в миллисекундах
 }
 
-ServoState Servo::getState() const
+ServoState Servo::GetState() const
 {
   return _state;
 }
 
-uint16_t Servo::getPulseWidth() const
+uint16_t Servo::GetPulseWidth() const
 {
   return _pulseWidth;
 }
 
-void Servo::set(uint16_t closedDuration, uint16_t openedDuration, uint16_t openedAngle)
+void Servo::Set(uint16_t closedDuration, uint16_t openedDuration, uint16_t openedAngle)
 {
   _closedDuration = closedDuration;
   _openedDuration = openedDuration;
   _openedAngle = openedAngle;
 }
 
-void Servo::update()
+void Servo::Update()
 {
   _currentTimeMs = millis();
 
   if (_state == UNKNOWN)
   {
-    close();
+    Close();
   }
 
   if (_state == MOVE)
@@ -64,41 +64,41 @@ void Servo::update()
   }
 }
 
-void Servo::toggle()
+void Servo::Toggle()
 {
   if (_state == CLOSED)
   {
-    open();
+    Open();
   }
   if (_state == OPEN)
   {
-    close();
+    Close();
   }
 }
 
-void Servo::autotoggle()
+void Servo::Autotoggle()
 {
   if (_state == CLOSED && _nextToggleTimeMs < _currentTimeMs && _openedDuration > 0)
   {
-    toggle();
+    Toggle();
     _nextToggleTimeMs = _currentTimeMs + _openedDuration * 1000UL * 60UL;
   }
 
   if (_state == OPEN && _nextToggleTimeMs < _currentTimeMs && _closedDuration > 0)
   {
-    toggle();
+    Toggle();
     _nextToggleTimeMs = _currentTimeMs + _closedDuration * 1000UL * 60UL;
   }
 }
 
-void Servo::open()
+void Servo::Open()
 {
   _targetAngle = _openedAngle;
   _state = MOVE;
   _nextMoveTimeMs = millis() + _moveDuration;
 }
 
-void Servo::close()
+void Servo::Close()
 {
   _targetAngle = _closedAngle;
   _state = MOVE;
