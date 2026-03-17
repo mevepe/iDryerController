@@ -963,6 +963,8 @@ void autoPidStart()
 void updateIDryerData()
 {
     WDT(WDTO_250MS, 4);
+    dryer.Reset();
+
     dryer.data.Kp = eeprom_read_word(&menuVal[DEF_PID_KP]) / DEF_PID_KP_DIV;
     dryer.data.Ki = eeprom_read_word(&menuVal[DEF_PID_KI]) / DEF_PID_KI_DIV;
     dryer.data.Kd = eeprom_read_word(&menuVal[DEF_PID_KD]) / DEF_PID_KD_DIV;

@@ -53,6 +53,8 @@ namespace math::algorithms
 
     // calculations
     void Process(float time, float value);
+
+    void Reset();
   };
 }
 

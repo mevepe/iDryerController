@@ -89,6 +89,8 @@ public:
 
   bool IsHeatingAllowed() const;
 
+  void Reset();
+
   bool UpdateData();
 
   void Setpoint();

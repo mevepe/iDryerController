@@ -4,9 +4,9 @@ iDryer::iDryer(thermistor &heaterTempSensor, AirTempSensor &airTempSensor) : _he
 {
   auto outputRange = airPid.GetMaxOutput() - airPid.GetMinOutput();
 
-  airPid.SetProportionalGain(outputRange / HEATING_THRESHOLD / 4.0f); // максимальная температура нагревателя до достижения границы агрессивного нагрева
-  airPid.SetIntegralGain(0.0005f); // небольшая интегральная составляющая для устранения статической ошибки
-  airPid.SetDerivativeGain(0.0f); // используем PI регулятор для температуры воздуха
+  airPid.SetProportionalGain(0.0f); // используем I регулятор для температуры воздуха
+  airPid.SetIntegralGain(0.01f);    // небольшая интегральная составляющая для устранения статической ошибки
+  airPid.SetDerivativeGain(0.0f);   // используем I регулятор для температуры воздуха
 }
 
 float iDryer::GetSetpoint() const
@@ -32,6 +32,22 @@ uint16_t iDryer::getPulseWidth() const
 bool iDryer::IsHeatingAllowed() const
 {
   return (state == DRY || state == STORAGE || state == AUTOPID) && _dimmer >= HEATER_MIN && _dimmer < HEATER_OFF;
+}
+
+void iDryer::Reset()
+{
+  _lastScreenUpdateTimestamp = 0;
+
+  _time = 0;
+  _targetAirTemp = 0;
+  _currentAirTemp = 0;
+  _targetHeaterTemp = 0;
+  _currentHeaterTemp = 0;
+  _heaterOutput = 0;
+
+  data = {};
+  airPid.Reset();
+  heaterPid.Reset();
 }
 
 bool iDryer::UpdateData()
@@ -107,7 +123,8 @@ void iDryer::Setpoint()
 
   if (airPid.IsOutputUpdated())
   {
-    _targetHeaterTemp = airPid.GetMappedOutput(0.0f, _targetAirTemp + data.deltaT);
+    _targetHeaterTemp = _targetAirTemp - HEATING_THRESHOLD;         // Целевая температура нагревателя
+    _targetHeaterTemp += airPid.GetMappedOutput(0.0f, data.deltaT); // Компенсация статической ошибки
   }
 
   if (_targetHeaterTemp > TMP_MAX)

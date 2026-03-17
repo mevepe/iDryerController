@@ -131,4 +131,18 @@ namespace math::algorithms
     _output = _proportionalTerm + _integralTerm + _derivativeTerm;
     _outputUpdated = true;
   }
+
+  void PIDController::Reset()
+  {
+    _outputUpdated = false;
+    _previousTime = 0;
+    _previousValue = 0;
+
+    _deltaTime = 0;
+    _proportionalTerm = 0;
+    _integralTerm = 0;
+    _derivativeTerm = 0;
+    _filterTerm = 0;
+    _output = 0;
+  }
 }
