@@ -1488,7 +1488,7 @@ void autoPidFlow()
         previousMicroseconds = currentMicroseconds;
 
         auto output = tuner.tunePID(dryer.data.ntcTemp, currentMicroseconds);
-        dryer.SetPulseWidth(uint16_t(math::map_to_range_with_clamp(output, minOutput, maxOutput, HEATER_MAX, HEATER_MIN)));
+        dryer.SetPulseWidth(output > minOutput ? HEATER_MIN : HEATER_MAX);
 
 #if KASYAK_FINDER && AUTOPID_LOGS
         Serial.print(" t: ");

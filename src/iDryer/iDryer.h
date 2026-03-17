@@ -60,11 +60,7 @@ public:
 private:
   unsigned long _lastScreenUpdateTimestamp = 0;
 
-  float _time = 0;
-  float _targetAirTemp = 0;
-  float _currentAirTemp = 0;
   float _targetHeaterTemp = 0;
-  float _currentHeaterTemp = 0;
 
   uint16_t _dimmer = 0;
 

@@ -38,11 +38,7 @@ void iDryer::Reset()
 {
   _lastScreenUpdateTimestamp = 0;
 
-  _time = 0;
-  _targetAirTemp = 0;
-  _currentAirTemp = 0;
   _targetHeaterTemp = 0;
-  _currentHeaterTemp = 0;
 
   data = {};
   airPid.Reset();
@@ -112,17 +108,17 @@ bool iDryer::UpdateData()
 
 void iDryer::Setpoint()
 {
-  _time = data.timestamp / float(math::msCountInSec); // Текущее время
-  _currentAirTemp = data.airTempCorrected;            // Текущая температура
-  _targetAirTemp = data.setTemp;                      // Заданная температура
-  _currentHeaterTemp = data.ntcTemp;                  // Текущая температура нагревателя
+  auto time = data.timestamp / float(math::msCountInSec); // Текущее время
+  auto currentAirTemp = data.airTempCorrected;            // Текущая температура
+  auto targetAirTemp = data.setTemp;                      // Заданная температура
+  auto currentHeaterTemp = data.ntcTemp;                  // Текущая температура нагревателя
 
-  auto airTempError = _targetAirTemp - _currentAirTemp;
-  airPid.Process(_time, airTempError);
+  auto airTempError = targetAirTemp - currentAirTemp;
+  airPid.Process(time, airTempError);
 
   if (airPid.IsOutputUpdated())
   {
-    _targetHeaterTemp = _targetAirTemp - HEATING_THRESHOLD;         // Целевая температура нагревателя
+    _targetHeaterTemp = targetAirTemp - HEATING_THRESHOLD;         // Целевая температура нагревателя
     _targetHeaterTemp += airPid.GetMappedOutput(0.0f, data.deltaT); // Компенсация статической ошибки
   }
 
@@ -132,13 +128,13 @@ void iDryer::Setpoint()
   }
 
   // Отключение при критическом перегреве
-  if (_currentAirTemp >= _targetAirTemp + CRITICAL_OVERHEAT)
+  if (currentAirTemp >= targetAirTemp + CRITICAL_OVERHEAT)
   {
     _targetHeaterTemp = 0;
   }
 
-  auto heaterTempError = _targetHeaterTemp - _currentHeaterTemp;
-  heaterPid.Process(_time, heaterTempError);
+  auto heaterTempError = _targetHeaterTemp - currentHeaterTemp;
+  heaterPid.Process(time, heaterTempError);
 
   if (heaterPid.IsOutputUpdated())
   {
@@ -155,11 +151,11 @@ void iDryer::Setpoint()
     Serial.print(" d: ");
     Serial.print(airTempError, 2);
     Serial.print(" at: ");
-    Serial.print(_currentAirTemp, 2);
+    Serial.print(currentAirTemp, 2);
     Serial.print(" s: ");
     Serial.print(_targetHeaterTemp, 2);
     Serial.print(" n: ");
-    Serial.print(_currentHeaterTemp, 2);
+    Serial.print(currentHeaterTemp, 2);
     Serial.print(" dt: ");
     Serial.print(airPid.GetDeltaTime(), 3);
     Serial.print(" ppt: ");
@@ -182,11 +178,11 @@ void iDryer::Setpoint()
     Serial.print(" d: ");
     Serial.print(airTempError, 2);
     Serial.print(" t: ");
-    Serial.print(_currentAirTemp, 2);
+    Serial.print(currentAirTemp, 2);
     Serial.print(" s: ");
     Serial.print(_targetHeaterTemp, 2);
     Serial.print(" n: ");
-    Serial.print(_currentHeaterTemp, 2);
+    Serial.print(currentHeaterTemp, 2);
     Serial.print(" dt: ");
     Serial.print(heaterPid.GetDeltaTime(), 3);
     Serial.print(" pt: ");
