@@ -631,8 +631,8 @@ void setup()
         i--;
     }
 
-    Timer1.enableISR(CHANNEL_A);                        // Разрешаем прерывание для таймера 1, канал A
-    attachInterrupt(INT_NUM, on_zero_crossing, RISING); // Подключаем прерывание для пересечения нуля
+    Timer1.enableISR(CHANNEL_A);                         // Разрешаем прерывание для таймера 1, канал A
+    attachInterrupt(INT_NUM, on_zero_crossing, FALLING); // Подключаем прерывание для пересечения нуля
 
 #ifdef PWM_TEST
     pwm_test();
