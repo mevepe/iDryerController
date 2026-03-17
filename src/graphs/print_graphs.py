@@ -68,20 +68,29 @@ def update():
         first_line = lines[0].strip().replace(":", "").split(" ")
         columnsCount = len(first_line)
 
-        for line in lines:
+        for lineIndex, line in enumerate(lines):
           line_s = line.strip().replace(":", "").split(" ")
           
           if (len(line_s) != columnsCount):
             continue
+        
+          row = defaultdict(float)
           
-          for columnIndex, value in enumerate(line_s):
-            if (columnIndex % 2 != 0):
-                continue
-              
-            columnName = value
-            columnValue = float(line_s[columnIndex + 1])
-              
-            columns[columnName].append(columnValue)
+          try:
+            for columnIndex, value in enumerate(line_s):
+                if (columnIndex % 2 != 0):
+                    continue
+                
+                columnName = value
+                columnValue = float(line_s[columnIndex + 1])
+                
+                row[columnName] = columnValue
+                
+            for columnName, columnValue in row.items():
+                columns[columnName].append(columnValue)
+          except Exception as e:
+            print("line parse error at line", lineIndex, ":", e)
+            continue
               
         columns["t"] = np.array(columns["t"]) - columns["t"][0]
         columns["t"] = columns["t"] / 1000.0 / 60.0
