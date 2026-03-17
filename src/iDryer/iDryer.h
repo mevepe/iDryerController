@@ -56,6 +56,8 @@ public:
   Data data;
   PIDController airPid;
   PIDController heaterPid;
+  bool isZeroCrossed = false;
+  bool isHeaterOn = false;
 
 private:
   unsigned long _lastScreenUpdateTimestamp = 0;

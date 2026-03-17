@@ -136,11 +136,11 @@ void iDryer::Setpoint()
 
   if (heaterPid.IsOutputUpdated())
   {
-    _dimmer = uint16_t(heaterPid.GetMappedOutput(HEATER_MAX, HEATER_MIN));
+    // _dimmer = uint16_t(heaterPid.GetMappedOutput(HEATER_MAX, HEATER_MIN));
 
     if (_targetHeaterTemp == 0)
     {
-      _dimmer = HEATER_OFF;
+      // _dimmer = HEATER_OFF;
     }
 
 #if KASYAK_FINDER && DRY_AIR_LOGS
@@ -178,6 +178,10 @@ void iDryer::Setpoint()
       auto ptr = input.c_str();
       char *endPtr = nullptr;
 
+      auto dimmer = static_cast<uint16_t>(strtoul(ptr, &endPtr, 10));
+      auto dimmerParsed = ptr != endPtr;
+      ptr = endPtr;
+
       auto kp = static_cast<float>(strtod(ptr, &endPtr));
       auto kpParsed = ptr != endPtr;
       ptr = endPtr;
@@ -185,12 +189,13 @@ void iDryer::Setpoint()
       auto ki = static_cast<float>(strtod(ptr, &endPtr));
       auto kiParsed = ptr != endPtr;
       ptr = endPtr;
-      
+
       auto kd = static_cast<float>(strtod(ptr, &endPtr));
       auto kdParsed = ptr != endPtr;
 
-      if (kpParsed && kiParsed && kdParsed)
+      if (dimmerParsed && kpParsed && kiParsed && kdParsed)
       {
+        _dimmer = dimmer;
         heaterPid.SetProportionalGain(kp);
         heaterPid.SetIntegralGain(ki);
         heaterPid.SetDerivativeGain(kd);

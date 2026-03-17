@@ -298,6 +298,7 @@ void servoTest()
 void on_zero_crossing()
 {
     PORTD &= ~(1 << DIMMER_PIN); // Выключение нагревателя при каждом пересечении нуля
+    dryer.isZeroCrossed = true;
 
     if (zero_impulse_count % 2 == 0) // Снижаем частоту до 50 Гц
     {
@@ -318,16 +319,27 @@ void on_zero_crossing()
 
 ISR(TIMER1_A)
 {
+    Timer1.stop(); // Остановка таймера в любом случае
+
     if (dryer.IsHeatingAllowed() && servo.GetState() != MOVE) // Проверка, что это таймер для нагревателя
     {
-        PORTD |= (1 << DIMMER_PIN); // Включение нагревателя
+        if (dryer.isZeroCrossed && !dryer.isHeaterOn)
+        {
+            PORTD |= (1 << DIMMER_PIN); // Включение нагревателя
+            dryer.isHeaterOn = true;
+            Timer1.setPeriod(HEATER_IMPULSE); // Установка короткого импульса для нагревателя
+        }
+        else if (dryer.isZeroCrossed && dryer.isHeaterOn)
+        {
+            PORTD &= ~(1 << DIMMER_PIN); // Выключение после импульса
+            dryer.isHeaterOn = false;
+            dryer.isZeroCrossed = false;
+        }
     }
     else if (servo.GetState() == MOVE)
     {
         PORTD &= ~(1 << SERVO_1_PIN); // Обнуление интервала ШИМ для сервопривода
     }
-
-    Timer1.stop(); // Остановка таймера в любом случае
 }
 
 ISR(PCINT1_vect)
@@ -1043,6 +1055,7 @@ void heaterOFF()
 {
     WDT(WDTO_250MS, 1);
     digitalWrite(DIMMER_PIN, 0);
+    dryer.isHeaterOn = false;
     WDT_DISABLE();
 }
 
