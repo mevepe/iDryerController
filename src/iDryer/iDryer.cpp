@@ -16,7 +16,13 @@ float iDryer::GetSetpoint() const
 
 float iDryer::GetOutput() const
 {
-  return heaterPid.GetOutput();
+  return _output;
+}
+
+void iDryer::SetOutput(float output)
+{
+  _output = output;
+  _overrideOutput = true;
 }
 
 bool iDryer::IsHeatingAllowed() const
@@ -126,9 +132,12 @@ void iDryer::Setpoint()
   auto heaterTempError = _targetHeaterTemp - currentHeaterTemp;
   heaterPid.Process(time, heaterTempError);
 
-  if (heaterPid.IsOutputUpdated() && !_overrideOutput)
+  if (heaterPid.IsOutputUpdated())
   {
-    _output = heaterPid.GetOutput();
+    if (!_overrideOutput)
+    {
+      _output = heaterPid.GetOutput();
+    }
 
     if (_targetHeaterTemp == 0)
     {
@@ -174,7 +183,7 @@ void iDryer::Setpoint()
       auto overrideOutputParsed = ptr != endPtr;
       ptr = endPtr;
 
-      auto output = static_cast<uint16_t>(strtoul(ptr, &endPtr, 10));
+      auto output = static_cast<float>(strtod(ptr, &endPtr));
       auto outputParsed = ptr != endPtr;
       ptr = endPtr;
 
@@ -199,6 +208,13 @@ void iDryer::Setpoint()
       }
     }
 
+    auto output = GetOutput();
+    auto minOutput = heaterPid.GetMinOutput();
+    auto maxOutput = heaterPid.GetMaxOutput();
+    auto dutyCycle = math::map_to_range_with_clamp(output, minOutput, maxOutput, 0, HEATER_PERIOD_COUNT);
+
+    auto zero_impulse_on_count = static_cast<uint16_t>(round(dutyCycle));
+
     Serial.print(" t: ");
     Serial.print(data.timestamp);
     Serial.print(" d: ");
@@ -218,7 +234,9 @@ void iDryer::Setpoint()
     Serial.print(" pd: ");
     Serial.print(heaterPid.GetDerivativeTerm(), 3);
     Serial.print(" po: ");
-    Serial.print(heaterPid.GetOutput(), 2);
+    Serial.print(_output, 2);
+    Serial.print(" ic: ");
+    Serial.print(zero_impulse_on_count);
     Serial.println();
     Serial.flush();
 #endif

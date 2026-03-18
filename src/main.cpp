@@ -306,7 +306,7 @@ void on_zero_crossing()
     periodTicks = currentCapture - lastCapture;
     lastCapture = currentCapture;
 
-    if (zero_impulse_count <= zero_impulse_on_count)
+    if (zero_impulse_count <= zero_impulse_on_count && zero_impulse_on_count != 0)
     {
         PORTD |= (1 << DIMMER_PIN); // Включение нагревателя в полупериоде
     }
@@ -325,12 +325,12 @@ void on_zero_crossing()
         // Timer1.setPeriod(servo.GetPulseWidth()); // Используем общий таймер для управления сервоприводом
     }
 
-    if (zero_impulse_count < HEATER_PERIOD_COUNT)
+    if (zero_impulse_count >= HEATER_PERIOD_COUNT)
     {
         zero_impulse_count = -1; // Сброс счетчика для нового цикла
     }
 
-    zero_impulse_on_count++;
+    zero_impulse_count++;
 }
 
 ISR(TIMER1_A)
