@@ -19,25 +19,17 @@ float iDryer::GetOutput() const
   return heaterPid.GetOutput();
 }
 
-uint16_t iDryer::GetPulseWidth() const
-{
-  return _dimmer;
-}
-
-void iDryer::SetPulseWidth(uint16_t pulseWidth)
-{
-  _dimmer = pulseWidth;
-}
-
 bool iDryer::IsHeatingAllowed() const
 {
-  return (state == DRY || state == STORAGE || state == AUTOPID) && _dimmer >= HEATER_MIN && _dimmer < HEATER_OFF;
+  return state == DRY || state == STORAGE || state == AUTOPID;
 }
 
 void iDryer::Reset()
 {
   _lastScreenUpdateTimestamp = 0;
   _targetHeaterTemp = 0;
+  _output = 0;
+  _overrideOutput = false;
 
   airPid.Reset();
   heaterPid.Reset();
@@ -134,13 +126,13 @@ void iDryer::Setpoint()
   auto heaterTempError = _targetHeaterTemp - currentHeaterTemp;
   heaterPid.Process(time, heaterTempError);
 
-  if (heaterPid.IsOutputUpdated())
+  if (heaterPid.IsOutputUpdated() && !_overrideOutput)
   {
-    // _dimmer = uint16_t(heaterPid.GetMappedOutput(HEATER_MAX, HEATER_MIN));
+    _output = heaterPid.GetOutput();
 
     if (_targetHeaterTemp == 0)
     {
-      // _dimmer = HEATER_OFF;
+      _output = 0;
     }
 
 #if KASYAK_FINDER && DRY_AIR_LOGS
@@ -178,8 +170,12 @@ void iDryer::Setpoint()
       auto ptr = input.c_str();
       char *endPtr = nullptr;
 
-      auto dimmer = static_cast<uint16_t>(strtoul(ptr, &endPtr, 10));
-      auto dimmerParsed = ptr != endPtr;
+      auto overrideOutput = static_cast<bool>(strtoul(ptr, &endPtr, 10));
+      auto overrideOutputParsed = ptr != endPtr;
+      ptr = endPtr;
+
+      auto output = static_cast<uint16_t>(strtoul(ptr, &endPtr, 10));
+      auto outputParsed = ptr != endPtr;
       ptr = endPtr;
 
       auto kp = static_cast<float>(strtod(ptr, &endPtr));
@@ -193,9 +189,10 @@ void iDryer::Setpoint()
       auto kd = static_cast<float>(strtod(ptr, &endPtr));
       auto kdParsed = ptr != endPtr;
 
-      if (dimmerParsed && kpParsed && kiParsed && kdParsed)
+      if (overrideOutputParsed && outputParsed && kpParsed && kiParsed && kdParsed)
       {
-        _dimmer = dimmer;
+        _overrideOutput = overrideOutput;
+        _output = output;
         heaterPid.SetProportionalGain(kp);
         heaterPid.SetIntegralGain(ki);
         heaterPid.SetDerivativeGain(kd);

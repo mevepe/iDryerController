@@ -284,7 +284,12 @@ iDryer dryer(ntc, bme);
 iDryer dryer(ntc, sht);
 #endif
 
-uint8_t zero_impulse_count = 0;
+volatile uint16_t lastCapture = 0;
+volatile uint16_t periodTicks = 0;
+volatile uint16_t zero_impulse_count = 0;
+volatile uint16_t zero_impulse_on_count = 0;
+float zero_impuse_period_sec = 0;
+
 Servo servo;
 
 BuzzerController buzzer(BUZZER_PIN);
@@ -297,46 +302,42 @@ void servoTest()
 
 void on_zero_crossing()
 {
-    PORTD &= ~(1 << DIMMER_PIN); // Выключение нагревателя при каждом пересечении нуля
-    dryer.isZeroCrossed = true;
+    auto currentCapture = TCNT1;
+    periodTicks = currentCapture - lastCapture;
+    lastCapture = currentCapture;
 
-    if (zero_impulse_count % 2 == 0) // Снижаем частоту до 50 Гц
+    if (zero_impulse_count <= zero_impulse_on_count)
     {
-        PORTD |= (1 << SERVO_1_PIN); // Включение сигнала для сервопривода
+        PORTD |= (1 << DIMMER_PIN); // Включение нагревателя в полупериоде
+    }
+    else
+    {
+        PORTD &= ~(1 << DIMMER_PIN); // Выключение нагревателя в полупериоде
     }
 
-    if (dryer.IsHeatingAllowed() && servo.GetState() != MOVE) // Проверка режимы работы для включения нагревателя и что сервопривод не в движении
+    if (zero_impulse_count % 2 == 0) // Снижаем частоту до 50 Гц. Подумать на счет сети 60 Гц
     {
-        Timer1.setPeriod(dryer.GetPulseWidth()); // Установка времени до включения нагревателя
-    }
-    else if (servo.GetState() == MOVE)
-    {
-        Timer1.setPeriod(servo.GetPulseWidth()); // Используем общий таймер для управления сервоприводом
+        // PORTD |= (1 << SERVO_1_PIN); // Включение сигнала для сервопривода
     }
 
-    zero_impulse_count++;
+    if (servo.GetState() == MOVE)
+    {
+        // Timer1.setPeriod(servo.GetPulseWidth()); // Используем общий таймер для управления сервоприводом
+    }
+
+    if (zero_impulse_count < HEATER_PERIOD_COUNT)
+    {
+        zero_impulse_count = -1; // Сброс счетчика для нового цикла
+    }
+
+    zero_impulse_on_count++;
 }
 
 ISR(TIMER1_A)
 {
     Timer1.stop(); // Остановка таймера в любом случае
 
-    if (dryer.IsHeatingAllowed() && servo.GetState() != MOVE) // Проверка, что это таймер для нагревателя
-    {
-        if (dryer.isZeroCrossed && !dryer.isHeaterOn)
-        {
-            PORTD |= (1 << DIMMER_PIN); // Включение нагревателя
-            dryer.isHeaterOn = true;
-            Timer1.setPeriod(HEATER_IMPULSE); // Установка короткого импульса для нагревателя
-        }
-        else if (dryer.isZeroCrossed && dryer.isHeaterOn)
-        {
-            PORTD &= ~(1 << DIMMER_PIN); // Выключение после импульса
-            dryer.isHeaterOn = false;
-            dryer.isZeroCrossed = false;
-        }
-    }
-    else if (servo.GetState() == MOVE)
+    if (servo.GetState() == MOVE)
     {
         PORTD &= ~(1 << SERVO_1_PIN); // Обнуление интервала ШИМ для сервопривода
     }
@@ -632,6 +633,7 @@ void setup()
     }
 
     Timer1.enableISR(CHANNEL_A);                         // Разрешаем прерывание для таймера 1, канал A
+    Timer1.resume();                                     // Запускаем таймер 1
     attachInterrupt(INT_NUM, on_zero_crossing, FALLING); // Подключаем прерывание для пересечения нуля
 
 #ifdef PWM_TEST
@@ -646,10 +648,19 @@ void setup()
 
 void loop()
 {
+    static uint16_t lastPerdiodTicks = 0;
+
     // calibration();
     enc.tick();
     buzzer.update();
     servo.Update();
+
+    auto periodTicksCopy = periodTicks;
+    if (periodTicksCopy != 0 && periodTicksCopy != lastPerdiodTicks)
+    {
+        lastPerdiodTicks = periodTicksCopy;
+        zero_impuse_period_sec = static_cast<float>(periodTicksCopy) / F_CPU;
+    }
 
     tmpTemp = (tmpTemp * 9 + analogRead(NTC_PIN)) / 10;
     if (tmpTemp <= ADC_MIN || tmpTemp >= ADC_MAX)
@@ -1055,7 +1066,6 @@ void heaterOFF()
 {
     WDT(WDTO_250MS, 1);
     digitalWrite(DIMMER_PIN, 0);
-    dryer.isHeaterOn = false;
     WDT_DISABLE();
 }
 
@@ -1236,6 +1246,13 @@ void getData()
 void setPoint()
 {
     dryer.Setpoint();
+
+    auto output = dryer.GetOutput();
+    auto minOutput = dryer.heaterPid.GetMinOutput();
+    auto maxOutput = dryer.heaterPid.GetMaxOutput();
+    auto dutyCycle = math::map_to_range_with_clamp(output, minOutput, maxOutput, 0, HEATER_PERIOD_COUNT);
+
+    zero_impulse_on_count = static_cast<uint16_t>(round(dutyCycle));
 }
 
 void ntcErrorFlow()
@@ -1433,7 +1450,7 @@ void autoPidFlow()
     }
 
     WDT_DISABLE();
-    dryer.SetPulseWidth(HEATER_OFF);
+    dryer.SetOutput(0.0f);
 
     oled.clear();
     getData();
@@ -1485,8 +1502,7 @@ void autoPidFlow()
 
         previousMicroseconds = currentMicroseconds;
 
-        auto output = tuner.tunePID(dryer.data.ntcTemp, currentMicroseconds);
-        dryer.SetPulseWidth(output > minOutput ? HEATER_MIN : HEATER_MAX);
+        dryer.SetOutput(tuner.tunePID(dryer.data.ntcTemp, currentMicroseconds));
 
 #if KASYAK_FINDER && AUTOPID_LOGS
         Serial.print(" t: ");
@@ -1512,7 +1528,7 @@ void autoPidFlow()
 #endif
     }
 
-    dryer.SetPulseWidth(HEATER_OFF);
+    dryer.SetOutput(0.0f);
 
     heaterOFF();
     fanMAX();

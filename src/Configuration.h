@@ -246,10 +246,7 @@ SERVO_CUCKOO - Servo sound notification time 0 - off, 50-100 - normal
  * НЕ ВЛЕЗАЙ! УЕБЬЕТ!
  * меняй это на свой страх и риск
  ********************/
-#define HEATER_MIN 500
-#define HEATER_MAX 9499
-#define HEATER_OFF 9500
-#define HEATER_IMPULSE 5
+#define HEATER_PERIOD_COUNT 33
 
 /**********************
 if you change here, do an upload isp and upload eep anyway

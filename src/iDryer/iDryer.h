@@ -56,15 +56,14 @@ public:
   Data data;
   PIDController airPid;
   PIDController heaterPid;
-  bool isZeroCrossed = false;
-  bool isHeaterOn = false;
 
 private:
   unsigned long _lastScreenUpdateTimestamp = 0;
 
   float _targetHeaterTemp = 0;
+  float _output = 0;
 
-  uint16_t _dimmer = 0;
+  bool _overrideOutput = false;
 
   thermistor &_heaterTempSensor;
   AirTempSensor &_airTempSensor;
@@ -75,9 +74,7 @@ public:
   float GetSetpoint() const;
 
   float GetOutput() const;
-
-  uint16_t GetPulseWidth() const;
-  void SetPulseWidth(uint16_t pulseWidth);
+  void SetOutput(float output);
 
   bool IsHeatingAllowed() const;
 
