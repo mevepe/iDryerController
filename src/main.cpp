@@ -1356,7 +1356,7 @@ void setPoint()
         Serial.print(" ang: ");
         Serial.print(angle * math::rd, 2);
         Serial.print(" ac: ");
-        Serial.print(zeroImpusePeriodSec, 7);
+        Serial.print(zeroImpusePeriodSec, 4);
         Serial.print(" de: ");
         Serial.print(heaterOnDelayUs);
         Serial.println();
