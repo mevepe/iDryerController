@@ -284,6 +284,7 @@ iDryer dryer(ntc, bme);
 iDryer dryer(ntc, sht);
 #endif
 
+volatile uint16_t timer2OverflowCount = 0;
 volatile uint16_t lastCapture = 0;
 volatile uint16_t periodTicks = 0;
 volatile uint16_t zeroImpulseCount = 0;
@@ -304,7 +305,8 @@ void servoTest()
 
 void on_zero_crossing()
 {
-    auto currentCapture = TCNT1;
+    auto currentCapture = static_cast<uint16_t>((timer2OverflowCount << 8) | TCNT2);
+
     periodTicks = currentCapture - lastCapture;
     lastCapture = currentCapture;
 
@@ -348,6 +350,15 @@ ISR(TIMER1_A)
         heaterOn = false;
         PORTD &= ~(1 << DIMMER_PIN); // Выключение управляющего импульса
     }
+}
+
+ISR(TIMER2_A)
+{
+}
+
+ISR(TIMER2_OVF_vect)
+{
+    timer2OverflowCount++;
 }
 
 ISR(PCINT1_vect)
@@ -639,8 +650,13 @@ void setup()
         i--;
     }
 
-    Timer1.enableISR(CHANNEL_A);                         // Разрешаем прерывание для таймера 1, канал A
-    attachInterrupt(INT_NUM, on_zero_crossing, FALLING); // Подключаем прерывание для пересечения нуля
+    Timer1.setDefault();                                // Настраиваем таймер 1 для управления нагревателем и сервоприводом
+    Timer1.enableISR(CHANNEL_A);                        // Разрешаем прерывания для таймера 1, канал A
+    Timer2.setDefault();                                // Настраиваем таймер 2 для измерения периода между пересечениями нуля
+    Timer2.enableISR(CHANNEL_A);                        // Разрешаем прерывания для таймера 2
+    Timer2.resume();                                    // Запускаем таймер 2 для измерения периода
+    TIMSK2 |= (1 << TOIE2);                             // Разрешаем прерывание по переполнению для таймера 2
+    attachInterrupt(INT_NUM, on_zero_crossing, RISING); // Подключаем прерывание для пересечения нуля
 
 #ifdef PWM_TEST
     pwm_test();
@@ -654,21 +670,18 @@ void setup()
 
 void loop()
 {
-    static uint16_t lastPerdiodTicks = 0;
-
     // calibration();
     enc.tick();
     buzzer.update();
     servo.Update();
 
+    noInterrupts();
+
     servoOnDurationUs = servo.GetPulseWidth();
 
-    auto periodTicksCopy = periodTicks;
-    if (periodTicksCopy != 0 && periodTicksCopy != lastPerdiodTicks)
-    {
-        lastPerdiodTicks = periodTicksCopy;
-        zeroImpusePeriodSec = static_cast<float>(periodTicksCopy) / F_CPU;
-    }
+    zeroImpusePeriodSec = periodTicks * 4e-6f; // 4 микросекунды при прескейле 64 и частоте 16 МГц
+
+    interrupts();
 
     tmpTemp = (tmpTemp * 9 + analogRead(NTC_PIN)) / 10;
     if (tmpTemp <= ADC_MIN || tmpTemp >= ADC_MAX)
@@ -1339,11 +1352,13 @@ void setPoint()
         // Serial.print(" pd: ");
         // Serial.print(dryer.heaterPid.GetDerivativeTerm(), 3);
         Serial.print(" po: ");
-        Serial.print(dryer.heaterPid.GetOutput(), 2);
+        Serial.print(dryer.GetOutput(), 2);
         Serial.print(" ang: ");
         Serial.print(angle * math::rd, 2);
         Serial.print(" ac: ");
-        Serial.print(zeroImpusePeriodSec, 2);
+        Serial.print(zeroImpusePeriodSec, 7);
+        Serial.print(" de: ");
+        Serial.print(heaterOnDelayUs);
         Serial.println();
         Serial.flush();
 #endif
