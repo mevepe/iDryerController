@@ -654,7 +654,7 @@ void setup()
     Timer1.enableISR(CHANNEL_A);                        // Разрешаем прерывания для таймера 1, канал A
     Timer2.setDefault();                                // Настраиваем таймер 2 для измерения периода между пересечениями нуля
     Timer2.enableISR(CHANNEL_A);                        // Разрешаем прерывания для таймера 2
-    Timer2.resume();                                    // Запускаем таймер 2 для измерения периода
+    TCCR2B |= (1 << CS22);                              // Устанавливаем прескалер 64 для таймера 2 (16 МГц / 64 = 250 кГц, период 4 мкс)
     TIMSK2 |= (1 << TOIE2);                             // Разрешаем прерывание по переполнению для таймера 2
     attachInterrupt(INT_NUM, on_zero_crossing, RISING); // Подключаем прерывание для пересечения нуля
 
@@ -1359,6 +1359,8 @@ void setPoint()
         Serial.print(zeroImpusePeriodSec, 4);
         Serial.print(" de: ");
         Serial.print(heaterOnDelayUs);
+        Serial.print(" pt: ");
+        Serial.print(periodTicks);
         Serial.println();
         Serial.flush();
 #endif
