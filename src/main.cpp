@@ -967,6 +967,7 @@ void storageStart()
 
 void autoPidStart()
 {
+#if SCALES_MODULE_NUM == 0 && !(KASYAK_FINDER == 1 && DRY_HEATER_LOGS == 1)
     WDT(WDTO_500MS, 12);
 
     updateIDryerData();
@@ -978,6 +979,7 @@ void autoPidStart()
     fanON(dryer.data.setFan);
 
     WDT_DISABLE();
+#endif
 }
 
 void updateIDryerData()
@@ -1255,98 +1257,97 @@ void setPoint()
 {
     dryer.Setpoint();
 
-    auto output = dryer.GetOutput();                                                                        // Получаем выход PID для управления нагревателем
-    auto angle = math::pi * (1.0f - sqrtf(output));                                                         // Преобразуем выход PID в угол для фазового управления
-    heaterOnDelayUs = static_cast<uint16_t>((zeroImpusePeriodSec * angle / math::pi) * math::usCountInSec); // Вычисляем задержку включения нагревателя в микросекундах
+    if (dryer.heaterPid.IsOutputUpdated())
+    {
+        auto output = dryer.GetOutput();                                                                        // Получаем выход PID для управления нагревателем
+        auto angle = math::pi * (1.0f - sqrtf(output));                                                         // Преобразуем выход PID в угол для фазового управления
+        heaterOnDelayUs = static_cast<uint16_t>((zeroImpusePeriodSec * angle / math::pi) * math::usCountInSec); // Вычисляем задержку включения нагревателя в микросекундах
 
 #if KASYAK_FINDER && DRY_AIR_LOGS
-    Serial.print(" t: ");
-    Serial.print(dryer.data.timestamp);
-    Serial.print(" d: ");
-    Serial.print(dryer.airPid.GetInput(), 2);
-    Serial.print(" at: ");
-    Serial.print(dryer.data.airTempCorrected, 2);
-    Serial.print(" s: ");
-    Serial.print(dryer.GetSetpoint(), 2);
-    Serial.print(" n: ");
-    Serial.print(dryer.data.ntcTemp, 2);
-    Serial.print(" dt: ");
-    Serial.print(dryer.airPid.GetDeltaTime(), 3);
-    Serial.print(" pp: ");
-    Serial.print(dryer.airPid.GetProportionalTerm(), 3);
-    Serial.print(" pi: ");
-    Serial.print(dryer.airPid.GetIntegralTerm(), 3);
-    Serial.print(" pd: ");
-    Serial.print(dryer.airPid.GetDerivativeTerm(), 3);
-    Serial.print(" po: ");
-    Serial.print(dryer.airPid.GetOutput(), 2);
-    Serial.println();
-    Serial.flush();
+        Serial.print(" t: ");
+        Serial.print(dryer.data.timestamp);
+        Serial.print(" d: ");
+        Serial.print(dryer.airPid.GetInput(), 2);
+        Serial.print(" at: ");
+        Serial.print(dryer.data.airTempCorrected, 2);
+        Serial.print(" s: ");
+        Serial.print(dryer.GetSetpoint(), 2);
+        Serial.print(" n: ");
+        Serial.print(dryer.data.ntcTemp, 2);
+        Serial.print(" dt: ");
+        Serial.print(dryer.airPid.GetDeltaTime(), 3);
+        Serial.print(" pp: ");
+        Serial.print(dryer.airPid.GetProportionalTerm(), 3);
+        Serial.print(" pi: ");
+        Serial.print(dryer.airPid.GetIntegralTerm(), 3);
+        Serial.print(" pd: ");
+        Serial.print(dryer.airPid.GetDerivativeTerm(), 3);
+        Serial.print(" po: ");
+        Serial.print(dryer.airPid.GetOutput(), 2);
+        Serial.println();
+        Serial.flush();
 #endif
 
 #if KASYAK_FINDER && DRY_HEATER_LOGS
-    if (Serial.available())
-    {
-        auto input = Serial.readStringUntil('\n');
-
-        auto ptr = input.c_str();
-        char *endPtr = nullptr;
-
-        auto overrideOutput = static_cast<bool>(strtoul(ptr, &endPtr, 10));
-        auto overrideOutputParsed = ptr != endPtr;
-        ptr = endPtr;
-
-        auto output = static_cast<float>(strtod(ptr, &endPtr));
-        auto outputParsed = ptr != endPtr;
-        ptr = endPtr;
-
-        auto kp = static_cast<float>(strtod(ptr, &endPtr));
-        auto kpParsed = ptr != endPtr;
-        ptr = endPtr;
-
-        auto ki = static_cast<float>(strtod(ptr, &endPtr));
-        auto kiParsed = ptr != endPtr;
-        ptr = endPtr;
-
-        auto kd = static_cast<float>(strtod(ptr, &endPtr));
-        auto kdParsed = ptr != endPtr;
-
-        if (overrideOutputParsed && outputParsed && kpParsed && kiParsed && kdParsed)
+        if (Serial.available())
         {
-            dryer.SetOutput(output);
-            dryer.heaterPid.SetProportionalGain(kp);
-            dryer.heaterPid.SetIntegralGain(ki);
-            dryer.heaterPid.SetDerivativeGain(kd);
-        }
-    }
+            auto input = Serial.readStringUntil('\n');
 
-    Serial.print(" t: ");
-    Serial.print(dryer.data.timestamp);
-    // Serial.print(" d: ");
-    // Serial.print(dryer.heaterPid.GetInput(), 2);
-    // Serial.print(" at: ");
-    // Serial.print(dryer.data.airTempCorrected, 2);
-    // Serial.print(" s: ");
-    // Serial.print(dryer.GetSetpoint(), 2);
-    // Serial.print(" n: ");
-    // Serial.print(dryer.data.ntcTemp, 2);
-    // Serial.print(" dt: ");
-    // Serial.print(dryer.heaterPid.GetDeltaTime(), 3);
-    // Serial.print(" pp: ");
-    // Serial.print(dryer.heaterPid.GetProportionalTerm(), 3);
-    // Serial.print(" pi: ");
-    // Serial.print(dryer.heaterPid.GetIntegralTerm(), 3);
-    // Serial.print(" pd: ");
-    // Serial.print(dryer.heaterPid.GetDerivativeTerm(), 3);
-    Serial.print(" po: ");
-    Serial.print(dryer.heaterPid.GetOutput(), 2);
-    Serial.print(" ang: ");
-    Serial.print(angle * math::rd, 2);
-    Serial.print(" ac: ");
-    Serial.print(zeroImpusePeriodSec, 2);
-    Serial.println();
-    Serial.flush();
+            auto ptr = input.c_str();
+            char *endPtr = nullptr;
+
+            auto output = static_cast<float>(strtod(ptr, &endPtr));
+            auto outputParsed = ptr != endPtr;
+            ptr = endPtr;
+
+            auto kp = static_cast<float>(strtod(ptr, &endPtr));
+            auto kpParsed = ptr != endPtr;
+            ptr = endPtr;
+
+            auto ki = static_cast<float>(strtod(ptr, &endPtr));
+            auto kiParsed = ptr != endPtr;
+            ptr = endPtr;
+
+            auto kd = static_cast<float>(strtod(ptr, &endPtr));
+            auto kdParsed = ptr != endPtr;
+
+            if (outputParsed && kpParsed && kiParsed && kdParsed)
+            {
+                dryer.SetOutput(output);
+                dryer.heaterPid.SetProportionalGain(kp);
+                dryer.heaterPid.SetIntegralGain(ki);
+                dryer.heaterPid.SetDerivativeGain(kd);
+            }
+        }
+
+        Serial.print(" t: ");
+        Serial.print(dryer.data.timestamp);
+        // Serial.print(" d: ");
+        // Serial.print(dryer.heaterPid.GetInput(), 2);
+        // Serial.print(" at: ");
+        // Serial.print(dryer.data.airTempCorrected, 2);
+        // Serial.print(" s: ");
+        // Serial.print(dryer.GetSetpoint(), 2);
+        // Serial.print(" n: ");
+        // Serial.print(dryer.data.ntcTemp, 2);
+        // Serial.print(" dt: ");
+        // Serial.print(dryer.heaterPid.GetDeltaTime(), 3);
+        // Serial.print(" pp: ");
+        // Serial.print(dryer.heaterPid.GetProportionalTerm(), 3);
+        // Serial.print(" pi: ");
+        // Serial.print(dryer.heaterPid.GetIntegralTerm(), 3);
+        // Serial.print(" pd: ");
+        // Serial.print(dryer.heaterPid.GetDerivativeTerm(), 3);
+        Serial.print(" po: ");
+        Serial.print(dryer.heaterPid.GetOutput(), 2);
+        Serial.print(" ang: ");
+        Serial.print(angle * math::rd, 2);
+        Serial.print(" ac: ");
+        Serial.print(zeroImpusePeriodSec, 2);
+        Serial.println();
+        Serial.flush();
 #endif
+    }
 }
 
 void ntcErrorFlow()

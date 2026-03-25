@@ -54,7 +54,7 @@ namespace math::algorithms
 
   float PIDController::GetOutput() const
   {
-    return _output;
+    return math::clamp(_output, _minOutput, _maxOutput);
   }
 
   float PIDController::GetMappedOutput(float lowerBound, float upperBound) const
