@@ -17,7 +17,9 @@ namespace math::algorithms
 
     // state
     bool _outputUpdated = false;
+    float _time = 0;
     float _previousTime = 0;
+    float _value = 0;
     float _previousValue = 0;
 
     // calculations
@@ -33,12 +35,14 @@ namespace math::algorithms
 
     // getters
     bool IsOutputUpdated() const;
+    float GetTime() const;
     float GetDeltaTime() const;
     float GetMinDeltaTime() const;
     float GetProportionalTerm() const;
     float GetIntegralTerm() const;
     float GetDerivativeTerm() const;
     float GetFilterTerm() const;
+    float GetInput() const;
     float GetOutput() const;
     float GetMappedOutput(float lowerBound, float upperBound) const;
     float GetMinOutput() const;

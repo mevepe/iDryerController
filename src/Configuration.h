@@ -113,7 +113,6 @@ temperature  sensor choice
 Пороговые значения для температурных фаз
  ***************************/
 #define DRY_START_THRESHOLD 1.0f // Порог для начала отсчета времени сушки (°C)
-#define HEATING_THRESHOLD 5.0f   // Порог для агрессивного нагрева (°C)
 #define CRITICAL_OVERHEAT 5.0f   // Критическая температура (°C)
 
 #define TMP_MIN 1
@@ -246,7 +245,7 @@ SERVO_CUCKOO - Servo sound notification time 0 - off, 50-100 - normal
  * НЕ ВЛЕЗАЙ! УЕБЬЕТ!
  * меняй это на свой страх и риск
  ********************/
-#define HEATER_PERIOD_COUNT 33
+#define HEATER_IMPULSE_DURATION_US 200 // Длительность импульса для управления нагревателем (в микросекундах)
 
 /**********************
 if you change here, do an upload isp and upload eep anyway

@@ -12,6 +12,11 @@ namespace math::algorithms
     return _outputUpdated;
   }
 
+  float PIDController::GetTime() const
+  {
+    return _time;
+  }
+
   float PIDController::GetDeltaTime() const
   {
     return _deltaTime;
@@ -40,6 +45,11 @@ namespace math::algorithms
   float PIDController::GetFilterTerm() const
   {
     return _filterTerm;
+  }
+
+  float PIDController::GetInput() const
+  {
+    return _value;
   }
 
   float PIDController::GetOutput() const
@@ -90,6 +100,8 @@ namespace math::algorithms
   void PIDController::Process(float time, float value)
   {
     _outputUpdated = false;
+    _time = time;
+    _value = value;
     _deltaTime = time - _previousTime;
 
     if (_deltaTime < 0.0f)

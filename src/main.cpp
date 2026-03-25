@@ -286,9 +286,11 @@ iDryer dryer(ntc, sht);
 
 volatile uint16_t lastCapture = 0;
 volatile uint16_t periodTicks = 0;
-volatile uint16_t zero_impulse_count = 0;
-volatile uint16_t zero_impulse_on_count = 0;
-float zero_impuse_period_sec = 0;
+volatile uint16_t zeroImpulseCount = 0;
+volatile uint16_t heaterOnDelayUs = 0;
+volatile bool heaterOn = false;
+volatile uint16_t servoOnDurationUs = 0;
+float zeroImpusePeriodSec = 0;
 
 Servo servo;
 
@@ -306,40 +308,45 @@ void on_zero_crossing()
     periodTicks = currentCapture - lastCapture;
     lastCapture = currentCapture;
 
-    if (zero_impulse_count <= zero_impulse_on_count && zero_impulse_on_count != 0)
+    heaterOn = false;
+    PORTD &= ~(1 << DIMMER_PIN); // Выключение нагревателя в начале полупериода
+
+    if (zeroImpulseCount % 2 == 0) // Снижаем частоту до 50 Гц. Подумать на счет сети 60 Гц
     {
-        PORTD |= (1 << DIMMER_PIN); // Включение нагревателя в полупериоде
-    }
-    else
-    {
-        PORTD &= ~(1 << DIMMER_PIN); // Выключение нагревателя в полупериоде
+        PORTD |= (1 << SERVO_1_PIN); // Включение сигнала для сервопривода
     }
 
-    if (zero_impulse_count % 2 == 0) // Снижаем частоту до 50 Гц. Подумать на счет сети 60 Гц
+    if (dryer.IsHeatingAllowed() && servo.GetState() != MOVE)
     {
-        // PORTD |= (1 << SERVO_1_PIN); // Включение сигнала для сервопривода
+        Timer1.setPeriod(heaterOnDelayUs); // Установка задержки для включения нагревателя
+    }
+    else if (servo.GetState() == MOVE)
+    {
+        Timer1.setPeriod(servoOnDurationUs); // Используем общий таймер для управления сервоприводом
     }
 
-    if (servo.GetState() == MOVE)
-    {
-        // Timer1.setPeriod(servo.GetPulseWidth()); // Используем общий таймер для управления сервоприводом
-    }
-
-    if (zero_impulse_count >= HEATER_PERIOD_COUNT)
-    {
-        zero_impulse_count = -1; // Сброс счетчика для нового цикла
-    }
-
-    zero_impulse_count++;
+    zeroImpulseCount++;
 }
 
 ISR(TIMER1_A)
 {
     Timer1.stop(); // Остановка таймера в любом случае
 
-    if (servo.GetState() == MOVE)
+    if (dryer.IsHeatingAllowed() && servo.GetState() != MOVE && !heaterOn)
+    {
+        heaterOn = true;
+        PORTD |= (1 << DIMMER_PIN);                   // Включение нагревателя после задержки
+        Timer1.setPeriod(HEATER_IMPULSE_DURATION_US); // Установка таймера для выключения управляющего импульса
+    }
+    else if (servo.GetState() == MOVE)
     {
         PORTD &= ~(1 << SERVO_1_PIN); // Обнуление интервала ШИМ для сервопривода
+    }
+
+    if (heaterOn) // Если управляющий импульс был включен, выключаем его
+    {
+        heaterOn = false;
+        PORTD &= ~(1 << DIMMER_PIN); // Выключение управляющего импульса
     }
 }
 
@@ -633,7 +640,6 @@ void setup()
     }
 
     Timer1.enableISR(CHANNEL_A);                         // Разрешаем прерывание для таймера 1, канал A
-    Timer1.resume();                                     // Запускаем таймер 1
     attachInterrupt(INT_NUM, on_zero_crossing, FALLING); // Подключаем прерывание для пересечения нуля
 
 #ifdef PWM_TEST
@@ -659,7 +665,7 @@ void loop()
     if (periodTicksCopy != 0 && periodTicksCopy != lastPerdiodTicks)
     {
         lastPerdiodTicks = periodTicksCopy;
-        zero_impuse_period_sec = static_cast<float>(periodTicksCopy) / F_CPU;
+        zeroImpusePeriodSec = static_cast<float>(periodTicksCopy) / F_CPU;
     }
 
     tmpTemp = (tmpTemp * 9 + analogRead(NTC_PIN)) / 10;
@@ -1247,12 +1253,98 @@ void setPoint()
 {
     dryer.Setpoint();
 
-    auto output = dryer.GetOutput();
-    auto minOutput = dryer.heaterPid.GetMinOutput();
-    auto maxOutput = dryer.heaterPid.GetMaxOutput();
-    auto dutyCycle = math::map_to_range_with_clamp(output, minOutput, maxOutput, 0, HEATER_PERIOD_COUNT);
+    auto output = dryer.GetOutput();                                                                    // Получаем выход PID для управления нагревателем
+    auto angle = M_PI * (1.0 - sqrt(output));                                                           // Преобразуем выход PID в угол для фазового управления
+    heaterOnDelayUs = static_cast<uint16_t>((zeroImpusePeriodSec * angle / M_PI) * math::usCountInSec); // Вычисляем задержку включения нагревателя в микросекундах
 
-    zero_impulse_on_count = static_cast<uint16_t>(round(dutyCycle));
+#if KASYAK_FINDER && DRY_AIR_LOGS
+    Serial.print(" t: ");
+    Serial.print(dryer.data.timestamp);
+    Serial.print(" d: ");
+    Serial.print(dryer.airPid.GetInput(), 2);
+    Serial.print(" at: ");
+    Serial.print(dryer.data.airTempCorrected, 2);
+    Serial.print(" s: ");
+    Serial.print(dryer.GetSetpoint(), 2);
+    Serial.print(" n: ");
+    Serial.print(dryer.data.ntcTemp, 2);
+    Serial.print(" dt: ");
+    Serial.print(dryer.airPid.GetDeltaTime(), 3);
+    Serial.print(" pp: ");
+    Serial.print(dryer.airPid.GetProportionalTerm(), 3);
+    Serial.print(" pi: ");
+    Serial.print(dryer.airPid.GetIntegralTerm(), 3);
+    Serial.print(" pd: ");
+    Serial.print(dryer.airPid.GetDerivativeTerm(), 3);
+    Serial.print(" po: ");
+    Serial.print(dryer.airPid.GetOutput(), 2);
+    Serial.println();
+    Serial.flush();
+#endif
+
+#if KASYAK_FINDER && DRY_HEATER_LOGS
+    if (Serial.available())
+    {
+        auto input = Serial.readStringUntil('\n');
+
+        auto ptr = input.c_str();
+        char *endPtr = nullptr;
+
+        auto overrideOutput = static_cast<bool>(strtoul(ptr, &endPtr, 10));
+        auto overrideOutputParsed = ptr != endPtr;
+        ptr = endPtr;
+
+        auto output = static_cast<float>(strtod(ptr, &endPtr));
+        auto outputParsed = ptr != endPtr;
+        ptr = endPtr;
+
+        auto kp = static_cast<float>(strtod(ptr, &endPtr));
+        auto kpParsed = ptr != endPtr;
+        ptr = endPtr;
+
+        auto ki = static_cast<float>(strtod(ptr, &endPtr));
+        auto kiParsed = ptr != endPtr;
+        ptr = endPtr;
+
+        auto kd = static_cast<float>(strtod(ptr, &endPtr));
+        auto kdParsed = ptr != endPtr;
+
+        if (overrideOutputParsed && outputParsed && kpParsed && kiParsed && kdParsed)
+        {
+            dryer.SetOutput(output);
+            dryer.heaterPid.SetProportionalGain(kp);
+            dryer.heaterPid.SetIntegralGain(ki);
+            dryer.heaterPid.SetDerivativeGain(kd);
+        }
+    }
+
+    Serial.print(" t: ");
+    Serial.print(dryer.data.timestamp);
+    Serial.print(" d: ");
+    Serial.print(dryer.heaterPid.GetInput(), 2);
+    Serial.print(" at: ");
+    Serial.print(dryer.data.airTempCorrected, 2);
+    Serial.print(" s: ");
+    Serial.print(dryer.GetSetpoint(), 2);
+    Serial.print(" n: ");
+    Serial.print(dryer.data.ntcTemp, 2);
+    Serial.print(" dt: ");
+    Serial.print(dryer.heaterPid.GetDeltaTime(), 3);
+    Serial.print(" pp: ");
+    Serial.print(dryer.heaterPid.GetProportionalTerm(), 3);
+    Serial.print(" pi: ");
+    Serial.print(dryer.heaterPid.GetIntegralTerm(), 3);
+    Serial.print(" pd: ");
+    Serial.print(dryer.heaterPid.GetDerivativeTerm(), 3);
+    Serial.print(" po: ");
+    Serial.print(dryer.heaterPid.GetOutput(), 2);
+    Serial.print(" ang: ");
+    Serial.print(angle * math::rd, 2);
+    Serial.print(" ac: ");
+    Serial.print(zeroImpusePeriodSec, 2);
+    Serial.println();
+    Serial.flush();
+#endif
 }
 
 void ntcErrorFlow()

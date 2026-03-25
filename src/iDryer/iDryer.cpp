@@ -114,8 +114,8 @@ void iDryer::Setpoint()
 
   if (airPid.IsOutputUpdated())
   {
-    _targetHeaterTemp = targetAirTemp;                                            // Целевая температура нагревателя
-    _targetHeaterTemp += airPid.GetMappedOutput(-HEATING_THRESHOLD, data.deltaT); // Компенсация статической ошибки
+    _targetHeaterTemp = targetAirTemp;                              // Целевая температура нагревателя
+    _targetHeaterTemp += airPid.GetMappedOutput(0.0f, data.deltaT); // Компенсация статической ошибки
   }
 
   if (_targetHeaterTemp > TMP_MAX)
@@ -143,102 +143,5 @@ void iDryer::Setpoint()
     {
       _output = 0;
     }
-
-#if KASYAK_FINDER && DRY_AIR_LOGS
-    Serial.print(" t: ");
-    Serial.print(data.timestamp);
-    Serial.print(" d: ");
-    Serial.print(airTempError, 2);
-    Serial.print(" at: ");
-    Serial.print(currentAirTemp, 2);
-    Serial.print(" s: ");
-    Serial.print(_targetHeaterTemp, 2);
-    Serial.print(" n: ");
-    Serial.print(currentHeaterTemp, 2);
-    Serial.print(" dt: ");
-    Serial.print(airPid.GetDeltaTime(), 3);
-    Serial.print(" pp: ");
-    Serial.print(airPid.GetProportionalTerm(), 3);
-    Serial.print(" pi: ");
-    Serial.print(airPid.GetIntegralTerm(), 3);
-    Serial.print(" pd: ");
-    Serial.print(airPid.GetDerivativeTerm(), 3);
-    Serial.print(" pf: ");
-    Serial.print(airPid.GetFilterTerm(), 2);
-    Serial.print(" po: ");
-    Serial.print(airPid.GetOutput(), 2);
-    Serial.println();
-    Serial.flush();
-#endif
-
-#if KASYAK_FINDER && DRY_HEATER_LOGS
-    if (Serial.available())
-    {
-      auto input = Serial.readStringUntil('\n');
-
-      auto ptr = input.c_str();
-      char *endPtr = nullptr;
-
-      auto overrideOutput = static_cast<bool>(strtoul(ptr, &endPtr, 10));
-      auto overrideOutputParsed = ptr != endPtr;
-      ptr = endPtr;
-
-      auto output = static_cast<float>(strtod(ptr, &endPtr));
-      auto outputParsed = ptr != endPtr;
-      ptr = endPtr;
-
-      auto kp = static_cast<float>(strtod(ptr, &endPtr));
-      auto kpParsed = ptr != endPtr;
-      ptr = endPtr;
-
-      auto ki = static_cast<float>(strtod(ptr, &endPtr));
-      auto kiParsed = ptr != endPtr;
-      ptr = endPtr;
-
-      auto kd = static_cast<float>(strtod(ptr, &endPtr));
-      auto kdParsed = ptr != endPtr;
-
-      if (overrideOutputParsed && outputParsed && kpParsed && kiParsed && kdParsed)
-      {
-        _overrideOutput = overrideOutput;
-        _output = output;
-        heaterPid.SetProportionalGain(kp);
-        heaterPid.SetIntegralGain(ki);
-        heaterPid.SetDerivativeGain(kd);
-      }
-    }
-
-    auto output = GetOutput();
-    auto minOutput = heaterPid.GetMinOutput();
-    auto maxOutput = heaterPid.GetMaxOutput();
-    auto dutyCycle = math::map_to_range_with_clamp(output, minOutput, maxOutput, 0, HEATER_PERIOD_COUNT);
-
-    auto zero_impulse_on_count = static_cast<uint16_t>(round(dutyCycle));
-
-    Serial.print(" t: ");
-    Serial.print(data.timestamp);
-    Serial.print(" d: ");
-    Serial.print(heaterTempError, 2);
-    Serial.print(" at: ");
-    Serial.print(currentAirTemp, 2);
-    Serial.print(" s: ");
-    Serial.print(_targetHeaterTemp, 2);
-    Serial.print(" n: ");
-    Serial.print(currentHeaterTemp, 2);
-    Serial.print(" dt: ");
-    Serial.print(heaterPid.GetDeltaTime(), 3);
-    Serial.print(" pp: ");
-    Serial.print(heaterPid.GetProportionalTerm(), 3);
-    Serial.print(" pi: ");
-    Serial.print(heaterPid.GetIntegralTerm(), 3);
-    Serial.print(" pd: ");
-    Serial.print(heaterPid.GetDerivativeTerm(), 3);
-    Serial.print(" po: ");
-    Serial.print(_output, 2);
-    Serial.print(" ic: ");
-    Serial.print(zero_impulse_on_count);
-    Serial.println();
-    Serial.flush();
-#endif
   }
 }
