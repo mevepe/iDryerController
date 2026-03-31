@@ -127,7 +127,7 @@ namespace math::algorithms
 
     _proportionalTerm = value * _proportionalGain;
     _integralTerm += value * _integralGain * _deltaTime;
-    _integralTerm = math::clamp(_integralTerm, _minOutput, _maxOutput);
+    _integralTerm = math::clamp(_integralTerm, -_maxOutput, _maxOutput);
 
     auto a = 1.0f + 2.0f * _filterGain / _deltaTime;
     auto aPrev = 1.0f - 2.0f * _filterGain / _deltaTime;

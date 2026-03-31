@@ -294,8 +294,8 @@ language, will not be displayed
 #endif
 
 #define KASYAK_FINDER 1
-#define DRY_AIR_LOGS 0
-#define DRY_HEATER_LOGS 1
+#define DRY_AIR_LOGS 1
+#define DRY_HEATER_LOGS 0
 #define SERVO_LOGS 0
 #define AUTOPID_LOGS 0
 
