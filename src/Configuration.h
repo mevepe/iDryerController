@@ -245,7 +245,8 @@ SERVO_CUCKOO - Servo sound notification time 0 - off, 50-100 - normal
  * НЕ ВЛЕЗАЙ! УЕБЬЕТ!
  * меняй это на свой страх и риск
  ********************/
-#define HEATER_IMPULSE_DURATION_US 200 // Длительность импульса для управления нагревателем (в микросекундах)
+#define HEATER_IMPULSE_DURATION_US 100 // Длительность импульса для управления нагревателем (в микросекундах)
+#define HEATER_IMPULSE_OFFSET_US 500   // Смещение для включения нагревателя относительно нулевого импульса (в микросекундах)
 
 /**********************
 if you change here, do an upload isp and upload eep anyway

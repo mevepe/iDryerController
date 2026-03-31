@@ -289,7 +289,7 @@ volatile uint16_t lastCapture = 0;
 volatile uint16_t periodTicks = 0;
 volatile uint16_t zeroImpulseCount = 0;
 volatile uint16_t heaterOnDelayUs = 0;
-volatile bool heaterOn = false;
+volatile bool turnHeaterOn = false;
 volatile uint16_t servoOnDurationUs = 0;
 float zeroImpusePeriodSec = 0;
 
@@ -310,7 +310,7 @@ void on_zero_crossing()
     periodTicks = currentCapture - lastCapture;
     lastCapture = currentCapture;
 
-    heaterOn = false;
+    turnHeaterOn = false;        // Сброс флага при каждом срабатывании нулевого импульса
     PORTD &= ~(1 << DIMMER_PIN); // Выключение нагревателя в начале полупериода
 
     if (zeroImpulseCount % 2 == 0) // Снижаем частоту до 50 Гц. Подумать на счет сети 60 Гц
@@ -320,6 +320,7 @@ void on_zero_crossing()
 
     if (dryer.IsHeatingAllowed() && servo.GetState() != MOVE)
     {
+        turnHeaterOn = true;               // Установка флага для включения нагревателя после задержки
         Timer1.setPeriod(heaterOnDelayUs); // Установка задержки для включения нагревателя
     }
     else if (servo.GetState() == MOVE)
@@ -334,21 +335,22 @@ ISR(TIMER1_A)
 {
     Timer1.stop(); // Остановка таймера в любом случае
 
-    if (dryer.IsHeatingAllowed() && servo.GetState() != MOVE && !heaterOn)
+    if (dryer.IsHeatingAllowed() && servo.GetState() != MOVE)
     {
-        heaterOn = true;
-        PORTD |= (1 << DIMMER_PIN);                   // Включение нагревателя после задержки
-        Timer1.setPeriod(HEATER_IMPULSE_DURATION_US); // Установка таймера для выключения управляющего импульса
+        if (turnHeaterOn)
+        {
+            turnHeaterOn = false;                         // Сброс флага после использования
+            PORTD |= (1 << DIMMER_PIN);                   // Включение нагревателя после задержки
+            Timer1.setPeriod(HEATER_IMPULSE_DURATION_US); // Установка таймера для выключения управляющего импульса
+        }
+        else
+        {
+            PORTD &= ~(1 << DIMMER_PIN); // Выключение управляющего импульса
+        }
     }
     else if (servo.GetState() == MOVE)
     {
         PORTD &= ~(1 << SERVO_1_PIN); // Обнуление интервала ШИМ для сервопривода
-    }
-
-    if (heaterOn) // Если управляющий импульс был включен, выключаем его
-    {
-        heaterOn = false;
-        PORTD &= ~(1 << DIMMER_PIN); // Выключение управляющего импульса
     }
 }
 
@@ -652,9 +654,10 @@ void setup()
 
     Timer1.setDefault();                                // Настраиваем таймер 1 для управления нагревателем и сервоприводом
     Timer1.enableISR(CHANNEL_A);                        // Разрешаем прерывания для таймера 1, канал A
-    Timer2.setDefault();                                // Настраиваем таймер 2 для измерения периода между пересечениями нуля
+    Timer2.setDefault();                                // Настраиваем таймер 2 для измерения периода между пересечениями нуля, прескалер 64
     Timer2.enableISR(CHANNEL_A);                        // Разрешаем прерывания для таймера 2
-    TCCR2B |= (1 << CS22);                              // Устанавливаем прескалер 64 для таймера 2 (16 МГц / 64 = 250 кГц, период 4 мкс)
+    TCCR2A &= ~((1 << WGM21) | (1 << WGM20));           // Настраиваем таймер 2 в режим Normal
+    TCCR2B &= ~(1 << WGM22);                            // Настраиваем таймер 2 в режим Normal
     TIMSK2 |= (1 << TOIE2);                             // Разрешаем прерывание по переполнению для таймера 2
     attachInterrupt(INT_NUM, on_zero_crossing, RISING); // Подключаем прерывание для пересечения нуля
 
@@ -679,7 +682,7 @@ void loop()
 
     servoOnDurationUs = servo.GetPulseWidth();
 
-    zeroImpusePeriodSec = periodTicks * 4e-6f; // 4 микросекунды при прескейле 64 и частоте 16 МГц
+    zeroImpusePeriodSec = (zeroImpusePeriodSec + periodTicks * 4e-6f) / 2.0f; // 4 микросекунды при прескейле 64 и частоте 16 МГц
 
     interrupts();
 
@@ -1272,9 +1275,12 @@ void setPoint()
 
     if (dryer.heaterPid.IsOutputUpdated())
     {
-        auto output = dryer.GetOutput();                                                                        // Получаем выход PID для управления нагревателем
-        auto angle = math::pi * (1.0f - sqrtf(output));                                                         // Преобразуем выход PID в угол для фазового управления
-        heaterOnDelayUs = static_cast<uint16_t>((zeroImpusePeriodSec * angle / math::pi) * math::usCountInSec); // Вычисляем задержку включения нагревателя в микросекундах
+        auto output = dryer.GetOutput();                // Получаем выход PID для управления нагревателем
+        auto angle = math::pi * (1.0f - sqrtf(output)); // Преобразуем выход PID в угол для фазового управления
+        auto delay = zeroImpusePeriodSec * angle / math::pi;
+        auto minDelay = static_cast<float>(HEATER_IMPULSE_OFFSET_US) / math::usCountInSec;
+        auto maxDelay = zeroImpusePeriodSec - minDelay;
+        heaterOnDelayUs = static_cast<uint16_t>(math::clamp(delay, minDelay, maxDelay) * math::usCountInSec); // Вычисляем задержку включения нагревателя в микросекундах
 
 #if KASYAK_FINDER && DRY_AIR_LOGS
         Serial.print(" t: ");
@@ -1324,9 +1330,13 @@ void setPoint()
             auto kd = static_cast<float>(strtod(ptr, &endPtr));
             auto kdParsed = ptr != endPtr;
 
-            if (outputParsed && kpParsed && kiParsed && kdParsed)
+            if (outputParsed)
             {
                 dryer.SetOutput(output);
+            }
+
+            if (kpParsed && kiParsed && kdParsed)
+            {
                 dryer.heaterPid.SetProportionalGain(kp);
                 dryer.heaterPid.SetIntegralGain(ki);
                 dryer.heaterPid.SetDerivativeGain(kd);
