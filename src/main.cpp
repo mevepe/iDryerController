@@ -1599,7 +1599,7 @@ void autoPidFlow()
     tuner.setSafeInterval(minSafeTimeMicroseconds);
     tuner.setOutputRange(minOutput, maxOutput);
     tuner.setTuningCycles(AUTOPID_ATTEMPT);
-    tuner.setZNMode(PIDAutotuner::ZNModeBasicPID);
+    tuner.setZNMode(PIDAutotuner::ZNModeNoOvershoot);
 
     if (servo.GetState() != CLOSED)
     {
