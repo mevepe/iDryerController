@@ -126,17 +126,14 @@ namespace math::algorithms
 
     if (!_overshootOnce && (_overshootThreshold != 0.0f && abs(value) <= _overshootThreshold || _overshootThreshold == 0.0f))
     {
-      _integralTerm = 0;
       _overshootOnce = true;
+      _integralTerm = 0;
     }
 
     _proportionalTerm = value * _proportionalGain;
 
-    if (_overshootOnce)
-    {
-      _integralTerm += value * _integralGain * _deltaTime;
-      _integralTerm = math::clamp(_integralTerm, -_maxOutput, _maxOutput);
-    }
+    _integralTerm += value * _integralGain * _deltaTime;
+    _integralTerm = math::clamp(_integralTerm, -_maxOutput, _maxOutput);
 
     auto a = 1.0f + 2.0f * _filterGain / _deltaTime;
     auto aPrev = 1.0f - 2.0f * _filterGain / _deltaTime;
