@@ -297,7 +297,9 @@ float heaterOnAngle = 0;
 
 Servo servo;
 
+#if SCALES_MODULE_NUM == 0 && !(KASYAK_FINDER == 1 && (DRY_HEATER_LOGS == 1 || DRY_AIR_LOGS == 1))
 BuzzerController buzzer(BUZZER_PIN);
+#endif
 
 void servoTest()
 {
@@ -477,9 +479,11 @@ void displayPrintMode()
         snprintf(val, sizeof(val), "%3hu/%03hu", uint8_t(optional_round(dryer.data.ntcTemp)), uint8_t(optional_round(dryer.GetSetpoint())));
         drawLine(val, 3, false, false, 72);
 
+#if SCALES_MODULE_NUM == 0 && !(KASYAK_FINDER == 1 && (DRY_HEATER_LOGS == 1 || DRY_AIR_LOGS == 1))
         drawLine(printMenuItem(&serviceTxt[8]), 4, false, false, 0);
         snprintf(val, sizeof(val), "%3hu", uint8_t(optional_round(dryer.data.airHumidity)));
         drawLine(val, 4, false, false, 104);
+#endif
     } while (oled.nextPage());
     dryer.data.flagScreenUpdate = false;
     WDT_DISABLE();
@@ -677,7 +681,9 @@ void loop()
 {
     // calibration();
     enc.tick();
+#if SCALES_MODULE_NUM == 0 && !(KASYAK_FINDER == 1 && (DRY_HEATER_LOGS == 1 || DRY_AIR_LOGS == 1))
     buzzer.update();
+#endif
     servo.Update();
 
     noInterrupts();
@@ -1006,6 +1012,7 @@ void updateIDryerData()
 {
     WDT(WDTO_250MS, 4);
     dryer.Reset();
+    dryer.heaterPid.SetOvershootThreshold(HEATER_OVERSHOOT_THRESHOLD);
 
     auto kp = eeprom_read_word(&menuVal[DEF_PID_KP]) / DEF_PID_KP_DIV;
     auto ki = eeprom_read_word(&menuVal[DEF_PID_KI]) / DEF_PID_KI_DIV;
@@ -1089,7 +1096,9 @@ void piii(uint16_t time_ms)
 
 void async_piii(uint16_t time_ms)
 {
+#if SCALES_MODULE_NUM == 0 && !(KASYAK_FINDER == 1 && (DRY_HEATER_LOGS == 1 || DRY_AIR_LOGS == 1))
     buzzer.buzz(time_ms);
+#endif
 }
 
 void heaterOFF()
@@ -1626,7 +1635,9 @@ void autoPidFlow()
         WDT(WDTO_4S, 25);
 
         enc.tick();
+#if SCALES_MODULE_NUM == 0 && !(KASYAK_FINDER == 1 && (DRY_HEATER_LOGS == 1 || DRY_AIR_LOGS == 1))
         buzzer.update();
+#endif
 
         if (enc.hold()) // check user exit
         {

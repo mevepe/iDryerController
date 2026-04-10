@@ -49,7 +49,7 @@ namespace math::algorithms
 
   float PIDController::GetInput() const
   {
-    return _value;
+    return _input;
   }
 
   float PIDController::GetOutput() const
@@ -97,25 +97,24 @@ namespace math::algorithms
     _filterGain = value;
   }
 
+  void PIDController::SetOvershootThreshold(float value)
+  {
+    _overshootThreshold = value;
+  }
+
   void PIDController::Process(float time, float value)
   {
     _outputUpdated = false;
     _time = time;
-    _value = value;
+    _input = value;
     _deltaTime = time - _previousTime;
 
     if (_deltaTime < 0.0f)
     {
+      Reset();
+
       _previousTime = time;
-      _previousValue = value;
-
-      _proportionalTerm = 0.0f;
-      _integralTerm = 0.0f;
-      _filterTerm = 0.0f;
-      _derivativeTerm = 0.0f;
-
-      _output = 0.0f;
-      _outputUpdated = true;
+      _previousInput = value;
 
       return;
     }
@@ -125,20 +124,29 @@ namespace math::algorithms
       return;
     }
 
+    if (!_overshootOnce && (_overshootThreshold != 0.0f && abs(value) <= _overshootThreshold || _overshootThreshold == 0.0f))
+    {
+      _overshootOnce = true;
+    }
+
     _proportionalTerm = value * _proportionalGain;
-    _integralTerm += value * _integralGain * _deltaTime;
-    _integralTerm = math::clamp(_integralTerm, -_maxOutput, _maxOutput);
+
+    if (_overshootOnce)
+    {
+      _integralTerm += value * _integralGain * _deltaTime;
+      _integralTerm = math::clamp(_integralTerm, -_maxOutput, _maxOutput);
+    }
 
     auto a = 1.0f + 2.0f * _filterGain / _deltaTime;
     auto aPrev = 1.0f - 2.0f * _filterGain / _deltaTime;
     auto b = 2.0f / _deltaTime;
     auto bPrev = -2.0f / _deltaTime;
 
-    _filterTerm = (value * b + _previousValue * bPrev - _filterTerm * aPrev) / a;
+    _filterTerm = (value * b + _previousInput * bPrev - _filterTerm * aPrev) / a;
     _derivativeTerm = _filterTerm * _derivativeGain;
 
     _previousTime = time;
-    _previousValue = value;
+    _previousInput = value;
 
     _output = _proportionalTerm + _integralTerm + _derivativeTerm;
     _outputUpdated = true;
@@ -147,8 +155,9 @@ namespace math::algorithms
   void PIDController::Reset()
   {
     _outputUpdated = false;
+    _overshootOnce = false;
     _previousTime = 0;
-    _previousValue = 0;
+    _previousInput = 0;
 
     _deltaTime = 0;
     _proportionalTerm = 0;

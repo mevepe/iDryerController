@@ -112,8 +112,9 @@ temperature  sensor choice
 /***************************
 Пороговые значения для температурных фаз
  ***************************/
-#define DRY_START_THRESHOLD 1.0f // Порог для начала отсчета времени сушки (°C)
-#define CRITICAL_OVERHEAT 5.0f   // Критическая температура (°C)
+#define DRY_START_THRESHOLD 1.0f        // Порог для начала отсчета времени сушки (°C)
+#define HEATER_OVERSHOOT_THRESHOLD 5.0f // Порог для начала работы интегральной составляющей PID регулятора нагревателя (°C)
+#define CRITICAL_OVERHEAT 5.0f          // Критическая температура (°C)
 
 #define TMP_MIN 1
 #define TMP_MAX 130
@@ -293,9 +294,9 @@ language, will not be displayed
 #define SENSOR_SHT31
 #endif
 
-#define KASYAK_FINDER 1
-#define DRY_AIR_LOGS 1
-#define DRY_HEATER_LOGS 0
+#define KASYAK_FINDER 0
+#define DRY_AIR_LOGS 0
+#define DRY_HEATER_LOGS 1
 #define SERVO_LOGS 0
 #define AUTOPID_LOGS 0
 
