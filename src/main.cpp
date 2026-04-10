@@ -975,7 +975,6 @@ void storageStart()
     scaleTimer = millis();
 
     updateIDryerData();
-    heaterON();
 
     dryer.state = STORAGE;
 
