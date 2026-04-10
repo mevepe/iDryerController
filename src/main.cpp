@@ -259,6 +259,7 @@ void filamentCheck(uint8_t sensorNum, int16_t mass, State state, volatile uint16
 // /* 21 */ void getdataAndSetpoint();
 void getData();
 void setPoint();
+void calculateHeaterOnDelay(float output);
 void screenUpdate();
 void drawLine(const char *text, int lineIndex, bool background = false, bool center = true, int x = 0, int backgroundX = 0);
 void ntcErrorFlow();
@@ -292,6 +293,7 @@ volatile uint16_t heaterOnDelayUs = 0;
 volatile bool turnHeaterOn = false;
 volatile uint16_t servoOnDurationUs = 0;
 float zeroImpusePeriodSec = 0;
+float heaterOnAngle = 0;
 
 Servo servo;
 
@@ -715,9 +717,11 @@ void loop()
         menuFlow();
         break;
 
+#if SCALES_MODULE_NUM == 0 && !(KASYAK_FINDER == 1 && AUTOPID_LOGS == 1)
     case DRY:
         dryFlow();
         break;
+#endif
 
 #if KASYAK_FINDER == 0
     case STORAGE:
@@ -1275,12 +1279,7 @@ void setPoint()
 
     if (dryer.heaterPid.IsOutputUpdated())
     {
-        auto output = dryer.GetOutput();                // Получаем выход PID для управления нагревателем
-        auto angle = math::pi * (1.0f - sqrtf(output)); // Преобразуем выход PID в угол для фазового управления
-        auto delay = zeroImpusePeriodSec * angle / math::pi;
-        auto minDelay = static_cast<float>(HEATER_IMPULSE_OFFSET_US) / math::usCountInSec;
-        auto maxDelay = zeroImpusePeriodSec - minDelay;
-        heaterOnDelayUs = static_cast<uint16_t>(math::clamp(delay, minDelay, maxDelay) * math::usCountInSec); // Вычисляем задержку включения нагревателя в микросекундах
+        calculateHeaterOnDelay(dryer.GetOutput());
 
 #if KASYAK_FINDER && DRY_AIR_LOGS
         if (Serial.available())
@@ -1390,17 +1389,28 @@ void setPoint()
         Serial.print(" po: ");
         Serial.print(dryer.GetOutput(), 2);
         Serial.print(" an: ");
-        Serial.print(angle * math::rd, 2);
-        // Serial.print(" ac: ");
-        // Serial.print(zeroImpusePeriodSec, 4);
+        Serial.print(heaterOnAngle * math::rd, 2);
         Serial.print(" de: ");
         Serial.print(heaterOnDelayUs);
+        // Serial.print(" ac: ");
+        // Serial.print(zeroImpusePeriodSec, 4);
         // Serial.print(" pt: ");
         // Serial.print(periodTicks);
         Serial.println();
         Serial.flush();
 #endif
     }
+}
+
+void calculateHeaterOnDelay(float output)
+{
+    heaterOnAngle = math::pi * (1.0f - sqrtf(output)); // Преобразуем выход PID в угол для фазового управления
+
+    auto delay = zeroImpusePeriodSec * heaterOnAngle / math::pi;                       // Вычисляем задержку включения нагревателя в секундах на основе угла и периода между пересечениями нуля
+    auto minDelay = static_cast<float>(HEATER_IMPULSE_OFFSET_US) / math::usCountInSec; // Минимальная задержка
+    auto maxDelay = zeroImpusePeriodSec - minDelay;                                    // Максимальная задержка
+
+    heaterOnDelayUs = static_cast<uint16_t>(math::clamp(delay, minDelay, maxDelay) * math::usCountInSec); // Вычисляем задержку включения нагревателя в микросекундах
 }
 
 void ntcErrorFlow()
@@ -1651,26 +1661,33 @@ void autoPidFlow()
         previousMicroseconds = currentMicroseconds;
 
         dryer.SetOutput(tuner.tunePID(dryer.data.ntcTemp, currentMicroseconds));
+        calculateHeaterOnDelay(dryer.GetOutput());
 
 #if KASYAK_FINDER && AUTOPID_LOGS
         Serial.print(" t: ");
         Serial.print(dryer.data.timestamp);
-        Serial.print(" dt: ");
-        Serial.print(tuner.getDeltaTime(), 3);
+        Serial.print(" d: ");
+        Serial.print(dryer.heaterPid.GetInput(), 2);
+        Serial.print(" at: ");
+        Serial.print(dryer.data.airTempCorrected, 2);
+        Serial.print(" s: ");
+        Serial.print(dryer.data.setTemp);
         Serial.print(" n: ");
         Serial.print(dryer.data.ntcTemp, 2);
-        Serial.print(" c: ");
-        Serial.print(tuner.getCycle());
-        Serial.print(" kp: ");
+        Serial.print(" dt: ");
+        Serial.print(elapsedMicroseconds, 3);
+        Serial.print(" pp: ");
         Serial.print(tuner.getKp(), 3);
-        Serial.print(" ki: ");
-        Serial.print(tuner.getKi(), 4);
-        Serial.print(" kd: ");
+        Serial.print(" pi: ");
+        Serial.print(tuner.getKi(), 3);
+        Serial.print(" pd: ");
         Serial.print(tuner.getKd(), 3);
-        Serial.print(" o: ");
+        Serial.print(" po: ");
         Serial.print(dryer.GetOutput(), 2);
-        Serial.print(" d: ");
-        Serial.print(dryer.GetPulseWidth());
+        Serial.print(" de: ");
+        Serial.print(heaterOnDelayUs);
+        Serial.print(" an: ");
+        Serial.print(heaterOnAngle * math::rd, 2);
         Serial.println();
         Serial.flush();
 #endif
