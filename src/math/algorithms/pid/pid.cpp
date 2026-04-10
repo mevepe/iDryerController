@@ -126,6 +126,7 @@ namespace math::algorithms
 
     if (!_overshootOnce && (_overshootThreshold != 0.0f && abs(value) <= _overshootThreshold || _overshootThreshold == 0.0f))
     {
+      _integralTerm = 0;
       _overshootOnce = true;
     }
 
