@@ -1601,6 +1601,8 @@ void autoPidFlow()
 {
     constexpr auto ntcUpdateInterval = (uint32_t)(0.005f * math::usCountInSec);
 
+    auto minOutput = dryer.heaterPid.GetMinOutput();
+    auto maxOutput = dryer.heaterPid.GetMaxOutput();
     auto minDeltaTimeMicroseconds = uint32_t(dryer.heaterPid.GetMinDeltaTime() * math::usCountInSec);
     auto minSafeTimeMicroseconds = uint32_t(10.0f * math::usCountInSec);
 
@@ -1608,7 +1610,7 @@ void autoPidFlow()
     tuner.setTargetInputValue(dryer.data.setTemp);
     tuner.setLoopInterval(minDeltaTimeMicroseconds);
     tuner.setSafeInterval(minSafeTimeMicroseconds);
-    tuner.setOutputRange(0.0f, 1.0f);
+    tuner.setOutputRange(minOutput, maxOutput);
     tuner.setTuningCycles(AUTOPID_ATTEMPT);
     tuner.setZNMode(PIDAutotuner::ZNModeNoOvershoot);
 
@@ -1673,7 +1675,7 @@ void autoPidFlow()
 
         previousMicroseconds = currentMicroseconds;
 
-        dryer.SetOutput(tuner.tunePID(dryer.data.ntcTemp, currentMicroseconds));
+        dryer.SetOutput(math::normalize(tuner.tunePID(dryer.data.ntcTemp, currentMicroseconds), minOutput, maxOutput));
         calculateHeaterOnDelay(dryer.GetOutput());
 
 #if KASYAK_FINDER && AUTOPID_LOGS
@@ -1690,11 +1692,11 @@ void autoPidFlow()
         Serial.print(" dt: ");
         Serial.print(elapsedMicroseconds);
         Serial.print(" pp: ");
-        Serial.print(tuner.getKp(), 3);
+        Serial.print(tuner.getKp(), 6);
         Serial.print(" pi: ");
-        Serial.print(tuner.getKi(), 3);
+        Serial.print(tuner.getKi(), 6);
         Serial.print(" pd: ");
-        Serial.print(tuner.getKd(), 3);
+        Serial.print(tuner.getKd(), 6);
         Serial.print(" po: ");
         Serial.print(dryer.GetOutput(), 2);
         Serial.print(" de: ");
