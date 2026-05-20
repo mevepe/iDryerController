@@ -97,11 +97,6 @@ namespace math::algorithms
     _filterGain = value;
   }
 
-  void PIDController::SetOvershootThreshold(float value)
-  {
-    _overshootThreshold = value;
-  }
-
   void PIDController::Process(float time, float value)
   {
     _outputUpdated = false;
@@ -124,16 +119,15 @@ namespace math::algorithms
       return;
     }
 
-    if (!_overshootOnce && (_overshootThreshold != 0.0f && abs(value) <= _overshootThreshold || _overshootThreshold == 0.0f))
-    {
-      _overshootOnce = true;
-      _integralTerm = 0;
-    }
-
     _proportionalTerm = value * _proportionalGain;
 
-    _integralTerm += value * _integralGain * _deltaTime;
-    _integralTerm = math::clamp(_integralTerm, -_maxOutput, _maxOutput);
+    auto outputIsSaturating = _output != GetOutput();
+    auto inputIsSameSignAsOutput = math::sign(_output) == math::sign(_input);
+
+    if (!(outputIsSaturating && inputIsSameSignAsOutput))
+    {
+      _integralTerm += value * _integralGain * _deltaTime;
+    }
 
     auto a = 1.0f + 2.0f * _filterGain / _deltaTime;
     auto aPrev = 1.0f - 2.0f * _filterGain / _deltaTime;
@@ -153,7 +147,6 @@ namespace math::algorithms
   void PIDController::Reset()
   {
     _outputUpdated = false;
-    _overshootOnce = false;
     _previousTime = 0;
     _previousInput = 0;
 

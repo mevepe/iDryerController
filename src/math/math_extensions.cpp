@@ -18,6 +18,13 @@ namespace math
 
   float clamp(float value, float lowerBound, float upperBound)
   {
-    return (value < lowerBound) ? lowerBound : (upperBound < value) ? upperBound : value;
+    return (value < lowerBound)
+               ? lowerBound
+               : ((upperBound < value) ? upperBound : value);
+  }
+
+  float sign(float value)
+  {
+    return (value > 0) - (value < 0);
   }
 }

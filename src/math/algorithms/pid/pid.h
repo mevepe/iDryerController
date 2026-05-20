@@ -12,13 +12,11 @@ namespace math::algorithms
     float _integralGain = 0;
     float _derivativeGain = 0;
     float _filterGain = 0;
-    float _minOutput = 0;
+    float _minOutput = -1;
     float _maxOutput = 1;
-    float _overshootThreshold = 0;
 
     // state
     bool _outputUpdated = false;
-    bool _overshootOnce = false;
     float _time = 0;
     float _previousTime = 0;
     float _input = 0;
@@ -56,7 +54,6 @@ namespace math::algorithms
     void SetIntegralGain(float value);
     void SetDerivativeGain(float value);
     void SetFilterGain(float value);
-    void SetOvershootThreshold(float value);
 
     // calculations
     void Process(float time, float value);
