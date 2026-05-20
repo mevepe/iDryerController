@@ -323,23 +323,23 @@ const ptrFunc menuFunc[]{
     NULL,          // id: 36
     NULL,          // id: 37
     &servoTest,    // id: 38
-#if SCALES_MODULE_NUM > 0 && AUTOPID_RUN == 0
+#if SCALES_MODULE_NUM > 0
     NULL,      // id: 39
     NULL,      // id: 40
     NULL,      // id: 41
     setSpool1, // id: 42
 #endif
-#if SCALES_MODULE_NUM > 1 && AUTOPID_RUN == 0
+#if SCALES_MODULE_NUM > 1
     NULL,       // id: 43
     NULL,       // id: 44
     &setSpool2, // id: 45
 #endif
-#if SCALES_MODULE_NUM > 2 && AUTOPID_RUN == 0
+#if SCALES_MODULE_NUM > 2
     NULL,       // id: 46
     NULL,       // id: 47
     &setSpool3, // id: 48
 #endif
-#if SCALES_MODULE_NUM > 3 && AUTOPID_RUN == 0
+#if SCALES_MODULE_NUM > 3
     NULL,       // id: 49
     NULL,       // id: 50
     &setSpool4, // id: 51

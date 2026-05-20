@@ -26,6 +26,12 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 
+#if KASYAK_FINDER && (DRY_AIR_LOGS || DRY_HEATER_LOGS)
+#define MAX_SHRINK_MODE 1
+#else
+#define MAX_SHRINK_MODE 0
+#endif
+
 #if KASYAK_FINDER
 #define DEBUG_PRINT(x) Serial.println(x)
 #else
@@ -182,7 +188,9 @@ EncButton enc(ENCODER_S1, ENCODER_S2, ENCODER_KEY, INPUT, INPUT_PULLUP, LOW);
 #define B_PIN 12
 uint8_t sensorNum = 0;
 HX711Multi hx711Multi(SCALES_MODULE_NUM, DT_PIN, SCK_PIN, A_PIN, B_PIN);
-#elif SCALES_MODULE_NUM != 0 && AUTOPID_RUN == 1
+#endif
+
+#if SCALES_MODULE_NUM != 0 && false
 uint32_t zero_weight_eep[] EEMEM{
     0,
     0,
@@ -276,7 +284,6 @@ void ntcErrorFlow();
 /* 31 */ // dryer.UpdateData(Data
 void WDT(uint16_t time, uint8_t current_function_uuid);
 void WDT_DISABLE();
-void calibration();
 float optional_round(float value);
 
 #ifdef SENSOR_BME280
@@ -297,7 +304,7 @@ float heaterOnAngle = 0;
 
 Servo servo;
 
-#if SCALES_MODULE_NUM == 0 && !(KASYAK_FINDER == 1 && (DRY_HEATER_LOGS == 1 || DRY_AIR_LOGS == 1))
+#if MAX_SHRINK_MODE == 0
 BuzzerController buzzer(BUZZER_PIN);
 #endif
 
@@ -479,7 +486,7 @@ void displayPrintMode()
         snprintf(val, sizeof(val), "%3hu/%03hu", uint8_t(optional_round(dryer.data.ntcTemp)), uint8_t(optional_round(dryer.GetSetpoint())));
         drawLine(val, 3, false, false, 72);
 
-#if SCALES_MODULE_NUM == 0 && !(KASYAK_FINDER == 1 && (DRY_HEATER_LOGS == 1 || DRY_AIR_LOGS == 1))
+#if MAX_SHRINK_MODE == 0
         drawLine(printMenuItem(&serviceTxt[8]), 4, false, false, 0);
         snprintf(val, sizeof(val), "%3hu", uint8_t(optional_round(dryer.data.airHumidity)));
         drawLine(val, 4, false, false, 104);
@@ -679,9 +686,8 @@ void setup()
 
 void loop()
 {
-    // calibration();
     enc.tick();
-#if SCALES_MODULE_NUM == 0 && !(KASYAK_FINDER == 1 && (DRY_HEATER_LOGS == 1 || DRY_AIR_LOGS == 1))
+#if MAX_SHRINK_MODE == 0
     buzzer.update();
 #endif
     servo.Update();
@@ -723,7 +729,7 @@ void loop()
         menuFlow();
         break;
 
-#if SCALES_MODULE_NUM == 0 && !(KASYAK_FINDER == 1 && AUTOPID_LOGS == 1)
+#if !(KASYAK_FINDER && AUTOPID_LOGS)
     case DRY:
         dryFlow();
         break;
@@ -735,7 +741,7 @@ void loop()
         break;
 #endif
 
-#if SCALES_MODULE_NUM == 0 && !(KASYAK_FINDER == 1 && (DRY_HEATER_LOGS == 1 || DRY_AIR_LOGS == 1))
+#if SCALES_MODULE_NUM == 0 && MAX_SHRINK_MODE == 0
     case AUTOPID:
         autoPidFlow();
         break;
@@ -992,7 +998,7 @@ void storageStart()
 
 void autoPidStart()
 {
-#if SCALES_MODULE_NUM == 0 && !(KASYAK_FINDER == 1 && (DRY_HEATER_LOGS == 1 || DRY_AIR_LOGS == 1))
+#if SCALES_MODULE_NUM == 0 && MAX_SHRINK_MODE == 0
     WDT(WDTO_500MS, 12);
 
     updateIDryerData();
@@ -1011,7 +1017,6 @@ void updateIDryerData()
 {
     WDT(WDTO_250MS, 4);
     dryer.Reset();
-    dryer.heaterPid.SetOvershootThreshold(HEATER_OVERSHOOT_THRESHOLD);
 
     auto kp = eeprom_read_word(&menuVal[DEF_PID_KP]) / DEF_PID_KP_DIV;
     auto ki = eeprom_read_word(&menuVal[DEF_PID_KI]) / DEF_PID_KI_DIV;
@@ -1095,7 +1100,7 @@ void piii(uint16_t time_ms)
 
 void async_piii(uint16_t time_ms)
 {
-#if SCALES_MODULE_NUM == 0 && !(KASYAK_FINDER == 1 && (DRY_HEATER_LOGS == 1 || DRY_AIR_LOGS == 1))
+#if MAX_SHRINK_MODE == 0
     buzzer.buzz(time_ms);
 #endif
 }
@@ -1634,7 +1639,7 @@ void autoPidFlow()
         WDT(WDTO_4S, 25);
 
         enc.tick();
-#if SCALES_MODULE_NUM == 0 && !(KASYAK_FINDER == 1 && (DRY_HEATER_LOGS == 1 || DRY_AIR_LOGS == 1))
+#if MAX_SHRINK_MODE == 0
         buzzer.update();
 #endif
 

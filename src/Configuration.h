@@ -113,7 +113,6 @@ temperature  sensor choice
 Пороговые значения для температурных фаз
  ***************************/
 #define DRY_START_THRESHOLD 1.0f        // Порог для начала отсчета времени сушки (°C)
-#define HEATER_OVERSHOOT_THRESHOLD 5.0f // Порог для начала работы интегральной составляющей PID регулятора нагревателя (°C)
 #define CRITICAL_OVERHEAT 5.0f          // Критическая температура (°C)
 
 #define TMP_MIN 1
@@ -255,7 +254,7 @@ if you change here, do an upload isp and upload eep anyway
 pio run -e EEP -t fullclean -t uploadeep -t upload
 
 ********************/
-#define SCALES_MODULE_NUM 0
+#define SCALES_MODULE_NUM 4
 
 #define FILAMENT_SENSOR_ON                   //
 #define ALERT_MASS 100                       // Beep by buzzer when less than this amount of filament left
