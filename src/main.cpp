@@ -1601,8 +1601,6 @@ void autoPidFlow()
 {
     constexpr auto ntcUpdateInterval = (uint32_t)(0.005f * math::usCountInSec);
 
-    auto minOutput = dryer.heaterPid.GetMinOutput();
-    auto maxOutput = dryer.heaterPid.GetMaxOutput();
     auto minDeltaTimeMicroseconds = uint32_t(dryer.heaterPid.GetMinDeltaTime() * math::usCountInSec);
     auto minSafeTimeMicroseconds = uint32_t(10.0f * math::usCountInSec);
 
@@ -1610,7 +1608,7 @@ void autoPidFlow()
     tuner.setTargetInputValue(dryer.data.setTemp);
     tuner.setLoopInterval(minDeltaTimeMicroseconds);
     tuner.setSafeInterval(minSafeTimeMicroseconds);
-    tuner.setOutputRange(minOutput, maxOutput);
+    tuner.setOutputRange(0.0f, 1.0f);
     tuner.setTuningCycles(AUTOPID_ATTEMPT);
     tuner.setZNMode(PIDAutotuner::ZNModeNoOvershoot);
 
@@ -1690,7 +1688,7 @@ void autoPidFlow()
         Serial.print(" n: ");
         Serial.print(dryer.data.ntcTemp, 2);
         Serial.print(" dt: ");
-        Serial.print(elapsedMicroseconds, 3);
+        Serial.print(elapsedMicroseconds);
         Serial.print(" pp: ");
         Serial.print(tuner.getKp(), 3);
         Serial.print(" pi: ");

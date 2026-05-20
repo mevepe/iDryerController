@@ -15,6 +15,8 @@ namespace math
 
   float map_to_range(float value, float inputLowerBound, float inputUpperBound, float outputLowerBound, float outputUpperBound);
 
+  float normalize(float value, float lowerBound, float upperBound);
+
   float clamp(float value, float lowerBound, float upperBound);
 
   float sign(float value);

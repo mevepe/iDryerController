@@ -6,7 +6,7 @@ namespace math
   {
     value = math::clamp(value, inputLowerBound, inputUpperBound);
 
-    return map_to_range(value, inputLowerBound, inputUpperBound, outputLowerBound, outputUpperBound);
+    return math::map_to_range(value, inputLowerBound, inputUpperBound, outputLowerBound, outputUpperBound);
   }
 
   float map_to_range(float value, float inputLowerBound, float inputUpperBound, float outputLowerBound, float outputUpperBound)
@@ -14,6 +14,11 @@ namespace math
     auto slope = (outputUpperBound - outputLowerBound) / (inputUpperBound - inputLowerBound);
 
     return outputLowerBound + slope * (value - inputLowerBound);
+  }
+
+  float normalize(float value, float lowerBound, float upperBound)
+  {
+    return (math::clamp(value, lowerBound, upperBound) - lowerBound) / (upperBound - lowerBound);
   }
 
   float clamp(float value, float lowerBound, float upperBound)

@@ -254,7 +254,7 @@ if you change here, do an upload isp and upload eep anyway
 pio run -e EEP -t fullclean -t uploadeep -t upload
 
 ********************/
-#define SCALES_MODULE_NUM 4
+#define SCALES_MODULE_NUM 0
 
 #define FILAMENT_SENSOR_ON                   //
 #define ALERT_MASS 100                       // Beep by buzzer when less than this amount of filament left
@@ -293,10 +293,10 @@ language, will not be displayed
 #define SENSOR_SHT31
 #endif
 
-#define KASYAK_FINDER 0
+#define KASYAK_FINDER 1
 #define DRY_AIR_LOGS 0
-#define DRY_HEATER_LOGS 1
+#define DRY_HEATER_LOGS 0
 #define SERVO_LOGS 0
-#define AUTOPID_LOGS 0
+#define AUTOPID_LOGS 1
 
 #endif

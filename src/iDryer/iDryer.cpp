@@ -136,7 +136,7 @@ void iDryer::Setpoint()
   {
     if (!_overrideOutput)
     {
-      _output = heaterPid.GetOutput();
+      _output = heaterPid.GetNormalizedOutput();
     }
 
     if (_targetHeaterTemp == 0)

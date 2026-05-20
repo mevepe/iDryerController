@@ -252,7 +252,7 @@ uint16_t menuVal[] EEMEM = {
     65,                      // id: 30 autopid temp
     0,                       // id: 31 autopid start
     100,                     // id: 32 airflow
-    20,                      // id: 33 delta
+    0,                       // id: 33 delta
     0,                       // id: 34
     10,                      // id: 35 servo close duration
     1,                       // id: 36 servo open duration
