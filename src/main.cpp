@@ -1430,10 +1430,10 @@ void ntcErrorFlow()
     oled.firstPage();
     do
     {
-        drawLine(printMenuItem(&serviceTxt[DEF_T_ERROR]), 2, true);
+        drawLine(printMenuItem(&serviceTxt[DEF_T_ERROR]), 1, true);
         drawLine(printMenuItem(&serviceTxt[DEF_T_CHECK]), 2, true);
-        drawLine(printMenuItem(&serviceTxt[DEF_T_THERMISTOR]), 2, true);
-        drawLine(printMenuItem(&serviceTxt[DEF_T_OVERLOAD]), 2, true);
+        drawLine(printMenuItem(&serviceTxt[DEF_T_THERMISTOR]), 3, true);
+        drawLine(printMenuItem(&serviceTxt[DEF_T_OVERLOAD]), 4, true);
     } while (oled.nextPage());
 
     while (digitalRead(encBut))
