@@ -52,6 +52,11 @@ namespace math::algorithms
     return _input;
   }
 
+  float PIDController::GetNormalizedOutput() const
+  {
+    return (GetOutput() - _minOutput) / (_maxOutput - _minOutput);
+  }
+
   float PIDController::GetOutput() const
   {
     return math::clamp(_output, _minOutput, _maxOutput);
