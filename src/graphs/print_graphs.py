@@ -99,6 +99,9 @@ def update():
         
         if (columns["s"]):
           columns["ne"] = np.array(columns["s"]) - np.array(columns["n"])
+          
+        if (columns["at"]):
+          columns["ae"] = 60.0 - np.array(columns["at"])
         
         curve_air_temp.setData(columns["t"], columns["at"])
         curve_setpoint.setData(columns["t"], columns["s"])
@@ -109,7 +112,7 @@ def update():
         curve_pid_d_term.setData(columns["t"], columns["pd"])
         curve_pid_output.setData(columns["t"], columns["po"])
         
-        curve_errors_air_temp.setData(columns["t"], columns["d"])
+        curve_errors_air_temp.setData(columns["t"], columns["ae"])
         curve_errors_heater_temp.setData(columns["t"], columns["ne"])
         
         # curve_autopid_heater_temp.setData(columns["t"], columns["n"])
