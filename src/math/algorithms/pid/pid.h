@@ -1,5 +1,6 @@
 #ifndef PID_H
 #define PID_H
+#include "math/math_extensions.h"
 
 namespace math::algorithms
 {
