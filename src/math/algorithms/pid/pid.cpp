@@ -102,7 +102,9 @@ namespace math::algorithms
   {
     _outputUpdated = false;
     _time = time;
+#if KASYAK_FINDER
     _input = value;
+#endif
     _deltaTime = time - _previousTime;
 
     if (_deltaTime < 0.0f)
