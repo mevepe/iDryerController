@@ -1737,15 +1737,7 @@ float optional_round(float value)
 
 void smart_delay(uint16_t time_ms)
 {
-    while (time_ms--)
-    {
-        // 1 ms ≈ 16000 тактов @ 16 МГц
-        // Один цикл for занимает ~4 такта
-        for (uint16_t i = 0; i < 4000; i++)
-        {
-            __asm__ __volatile__("nop");
-        }
-    }
+    delay(time_ms);
 }
 
 #if SCALES_MODULE_NUM > 0

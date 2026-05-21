@@ -8,8 +8,8 @@ namespace math::algorithms
   {
   private:
     // settings
-    const float _minOutput = 0;
-    const float _maxOutput = 1;
+    const int8_t _minOutput = 0;
+    const int8_t _maxOutput = 1;
     float _minDeltaTime = 0;
     float _proportionalGain = 0;
     float _integralGain = 0;
@@ -19,8 +19,6 @@ namespace math::algorithms
     // state
     bool _outputUpdated = false;
     float _time = 0;
-    float _previousTime = 0;
-    float _input = 0;
     float _previousInput = 0;
 
     // calculations
@@ -43,7 +41,6 @@ namespace math::algorithms
     float GetIntegralTerm() const;
     float GetDerivativeTerm() const;
     float GetFilterTerm() const;
-    float GetInput() const;
     float GetOutput() const;
     float GetMappedOutput(float lowerBound, float upperBound) const;
     float GetMinOutput() const;
