@@ -257,7 +257,7 @@ if you change here, do an upload isp and upload eep anyway
 pio run -e EEP -t fullclean -t uploadeep -t upload
 
 ********************/
-#define SCALES_MODULE_NUM 4
+#define SCALES_MODULE_NUM 0
 
 #define FILAMENT_SENSOR_ON                   //
 #define ALERT_MASS 100                       // Beep by buzzer when less than this amount of filament left
