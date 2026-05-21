@@ -46,6 +46,13 @@ namespace math::algorithms
     return _filterTerm;
   }
 
+#if KASYAK_FINDER
+  float PIDController::GetInput() const
+  {
+    return _input;
+  }
+#endif
+
   float PIDController::GetOutput() const
   {
     return math::clamp(_output, _minOutput, _maxOutput);
@@ -94,6 +101,9 @@ namespace math::algorithms
   void PIDController::Process(float time, float value)
   {
     _outputUpdated = false;
+#if KASYAK_FINDER
+    _input = value;
+#endif
     _deltaTime = time - _time;
     _time = time;
 

@@ -1,5 +1,6 @@
 #ifndef PID_H
 #define PID_H
+#include "Configuration.h"
 #include "math/math_extensions.h"
 
 namespace math::algorithms
@@ -19,6 +20,9 @@ namespace math::algorithms
     // state
     bool _outputUpdated = false;
     float _time = 0;
+#if KASYAK_FINDER
+    float _input = 0;
+#endif
     float _previousInput = 0;
 
     // calculations
@@ -41,6 +45,9 @@ namespace math::algorithms
     float GetIntegralTerm() const;
     float GetDerivativeTerm() const;
     float GetFilterTerm() const;
+#if KASYAK_FINDER
+    float GetInput() const;
+#endif
     float GetOutput() const;
     float GetMappedOutput(float lowerBound, float upperBound) const;
     float GetMinOutput() const;
