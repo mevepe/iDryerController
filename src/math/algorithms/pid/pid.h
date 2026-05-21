@@ -9,8 +9,8 @@ namespace math::algorithms
   {
   private:
     // settings
-    const int8_t _minOutput = 0;
-    const int8_t _maxOutput = 1;
+    const float _minOutput = 0;
+    const float _maxOutput = 1;
     float _minDeltaTime = 0;
     float _proportionalGain = 0;
     float _integralGain = 0;
@@ -23,6 +23,7 @@ namespace math::algorithms
 #if KASYAK_FINDER
     float _input = 0;
 #endif
+    float _previousTime = 0;
     float _previousInput = 0;
 
     // calculations

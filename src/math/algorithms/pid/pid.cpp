@@ -101,16 +101,15 @@ namespace math::algorithms
   void PIDController::Process(float time, float value)
   {
     _outputUpdated = false;
-#if KASYAK_FINDER
-    _input = value;
-#endif
-    _deltaTime = time - _time;
     _time = time;
+    _input = value;
+    _deltaTime = time - _previousTime;
 
     if (_deltaTime < 0.0f)
     {
       Reset();
 
+      _previousTime = time;
       _previousInput = value;
 
       return;
@@ -140,6 +139,7 @@ namespace math::algorithms
     _filterTerm = (value * b + _previousInput * bPrev - _filterTerm * aPrev) / a;
     _derivativeTerm = _filterTerm * _derivativeGain;
 
+    _previousTime = time;
     _previousInput = value;
 
     _output = _proportionalTerm + _integralTerm + _derivativeTerm;
@@ -149,6 +149,7 @@ namespace math::algorithms
   void PIDController::Reset()
   {
     _outputUpdated = false;
+    _previousTime = 0;
     _previousInput = 0;
 
     _deltaTime = 0;
