@@ -7,13 +7,13 @@ namespace math::algorithms
   {
   private:
     // settings
+    const float _minOutput = 0;
+    const float _maxOutput = 1;
     float _minDeltaTime = 0;
     float _proportionalGain = 0;
     float _integralGain = 0;
     float _derivativeGain = 0;
     float _filterGain = 0;
-    float _minOutput = -1;
-    float _maxOutput = 1;
 
     // state
     bool _outputUpdated = false;
@@ -44,7 +44,6 @@ namespace math::algorithms
     float GetFilterTerm() const;
     float GetInput() const;
     float GetOutput() const;
-    float GetNormalizedOutput() const;
     float GetMappedOutput(float lowerBound, float upperBound) const;
     float GetMinOutput() const;
     float GetMaxOutput() const;

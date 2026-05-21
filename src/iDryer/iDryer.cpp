@@ -2,11 +2,9 @@
 
 iDryer::iDryer(thermistor &heaterTempSensor, AirTempSensor &airTempSensor) : _heaterTempSensor(heaterTempSensor), _airTempSensor(airTempSensor)
 {
-  auto outputRange = airPid.GetMaxOutput() - airPid.GetMinOutput();
-
-  airPid.SetProportionalGain(0.0f); // используем I регулятор для температуры воздуха
-  airPid.SetIntegralGain(0.01f);    // небольшая интегральная составляющая для устранения статической ошибки
-  airPid.SetDerivativeGain(0.0f);   // используем I регулятор для температуры воздуха
+  airPid.SetProportionalGain(AIR_PID_KP);
+  airPid.SetIntegralGain(AIR_PID_KI);
+  airPid.SetDerivativeGain(AIR_PID_KD);
 }
 
 float iDryer::GetSetpoint() const
@@ -136,7 +134,7 @@ void iDryer::Setpoint()
   {
     if (!_overrideOutput)
     {
-      _output = heaterPid.GetNormalizedOutput();
+      _output = heaterPid.GetOutput();
     }
 
     if (_targetHeaterTemp == 0)

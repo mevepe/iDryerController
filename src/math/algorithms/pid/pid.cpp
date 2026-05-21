@@ -57,11 +57,6 @@ namespace math::algorithms
     return math::clamp(_output, _minOutput, _maxOutput);
   }
 
-    float PIDController::GetNormalizedOutput() const
-  {
-    return math::normalize(_output, _minOutput, _maxOutput);
-  }
-
   float PIDController::GetMappedOutput(float lowerBound, float upperBound) const
   {
     return math::map_to_range_with_clamp(_output, _minOutput, _maxOutput, lowerBound, upperBound);
@@ -127,12 +122,13 @@ namespace math::algorithms
     _proportionalTerm = value * _proportionalGain;
 
     auto outputIsSaturating = _output != GetOutput();
-    auto inputIsSameSignAsOutput = math::sign(_output) == math::sign(_input);
 
-    if (!(outputIsSaturating && inputIsSameSignAsOutput))
+    if (!outputIsSaturating)
     {
       _integralTerm += value * _integralGain * _deltaTime;
     }
+
+    _integralTerm = math::clamp(_integralTerm, -_maxOutput, _maxOutput);
 
     auto a = 1.0f + 2.0f * _filterGain / _deltaTime;
     auto aPrev = 1.0f - 2.0f * _filterGain / _deltaTime;

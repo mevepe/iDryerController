@@ -39,8 +39,9 @@ def create_plot(title, row, col, x_label, y_label, x_units, y_units):
     return plot
 
 plot_01 = create_plot("Air, NTC, Setpoint", 0, 0, "time", "values", "mins", None)
-plot_02 = create_plot("PID", 1, 0, "time", "values", "mins", None)
-plot_03 = create_plot("Errors", 2, 0, "time", "values", "mins", None)
+plot_02 = create_plot("PID", 0, 1, "time", "values", "mins", None)
+plot_03 = create_plot("Errors", 1, 0, "time", "values", "mins", None)
+plot_13 = create_plot("Errors", 1, 1, "time", "values", "mins", None)
 
 curve_air_temp = plot_01.plot(pen=pg.mkPen('r', width=3), name="Air temp")
 curve_setpoint = plot_01.plot(pen=pg.mkPen('k', width=3), name="Setpoint")
@@ -52,7 +53,7 @@ curve_pid_d_term = plot_02.plot(pen=pg.mkPen('m', width=3), name="dTerm")
 curve_pid_output = plot_02.plot(pen=pg.mkPen('k', width=3), name="Output")
 
 curve_errors_air_temp = plot_03.plot(pen=pg.mkPen('r', width=3), name="Air temp error")
-curve_errors_heater_temp = plot_03.plot(pen=pg.mkPen('g', width=3), name="Heater temp error")
+curve_errors_heater_temp = plot_13.plot(pen=pg.mkPen('g', width=3), name="Heater temp error")
 
 # curve_autopid_output = plot_03.plot(pen=pg.mkPen('g', width=3), name="Output")
 # curve_autopid_heater_temp = plot_04.plot(pen=pg.mkPen('r', width=3), name="Heater temp")

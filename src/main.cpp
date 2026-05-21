@@ -1086,12 +1086,6 @@ uint32_t readError()
 
 void piii(uint16_t time_ms)
 {
-    if (dryer.state == AUTOPID)
-    {
-        return;
-    }
-
-    time_ms = max(10u, time_ms);
     digitalWrite(BUZZER_PIN, HIGH);
     delay(time_ms);
     digitalWrite(BUZZER_PIN, LOW);
@@ -1318,6 +1312,7 @@ void setPoint()
                 dryer.airPid.SetProportionalGain(kp);
                 dryer.airPid.SetIntegralGain(ki);
                 dryer.airPid.SetDerivativeGain(kd);
+                dryer.airPid.Reset();
             }
         }
 
@@ -1378,6 +1373,7 @@ void setPoint()
                 dryer.heaterPid.SetProportionalGain(kp);
                 dryer.heaterPid.SetIntegralGain(ki);
                 dryer.heaterPid.SetDerivativeGain(kd);
+                dryer.heaterPid.Reset();
             }
         }
 
@@ -1401,10 +1397,10 @@ void setPoint()
         Serial.print(dryer.heaterPid.GetDerivativeTerm(), 3);
         Serial.print(" po: ");
         Serial.print(dryer.GetOutput(), 2);
-        Serial.print(" an: ");
-        Serial.print(heaterOnAngle * math::rd, 2);
-        Serial.print(" de: ");
-        Serial.print(heaterOnDelayUs);
+        // Serial.print(" an: ");
+        // Serial.print(heaterOnAngle * math::rd, 2);
+        // Serial.print(" de: ");
+        // Serial.print(heaterOnDelayUs);
         // Serial.print(" ac: ");
         // Serial.print(zeroImpusePeriodSec, 4);
         // Serial.print(" pt: ");

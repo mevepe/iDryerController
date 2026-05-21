@@ -112,8 +112,11 @@ temperature  sensor choice
 /***************************
 Пороговые значения для температурных фаз
  ***************************/
-#define DRY_START_THRESHOLD 1.0f        // Порог для начала отсчета времени сушки (°C)
-#define CRITICAL_OVERHEAT 5.0f          // Критическая температура (°C)
+#define DRY_START_THRESHOLD 1.0f // Порог для начала отсчета времени сушки (°C)
+#define CRITICAL_OVERHEAT 5.0f   // Критическая температура (°C)
+#define AIR_PID_KP 1.0f          // Пропорциональная составляющая PID по воздуху
+#define AIR_PID_KI 0.01f         // Интегральная составляющая PID по воздуху
+#define AIR_PID_KD 0.0f          // Дифференциальная составляющая PID по воздуху
 
 #define TMP_MIN 1
 #define TMP_MAX 130
@@ -294,9 +297,9 @@ language, will not be displayed
 #endif
 
 #define KASYAK_FINDER 1
-#define DRY_AIR_LOGS 0
+#define DRY_AIR_LOGS 1
 #define DRY_HEATER_LOGS 0
 #define SERVO_LOGS 0
-#define AUTOPID_LOGS 1
+#define AUTOPID_LOGS 0
 
 #endif
