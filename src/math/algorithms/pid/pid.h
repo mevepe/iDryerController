@@ -19,8 +19,8 @@ namespace math::algorithms
 
     // state
     bool _outputUpdated = false;
-    float _time = 0;
 #if KASYAK_FINDER
+    float _time = 0;
     float _input = 0;
 #endif
     float _previousTime = 0;
@@ -39,7 +39,6 @@ namespace math::algorithms
 
     // getters
     bool IsOutputUpdated() const;
-    float GetTime() const;
     float GetDeltaTime() const;
     float GetMinDeltaTime() const;
     float GetProportionalTerm() const;
@@ -47,6 +46,7 @@ namespace math::algorithms
     float GetDerivativeTerm() const;
     float GetFilterTerm() const;
 #if KASYAK_FINDER
+    float GetTime() const;
     float GetInput() const;
 #endif
     float GetOutput() const;

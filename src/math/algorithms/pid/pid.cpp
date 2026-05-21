@@ -11,11 +11,6 @@ namespace math::algorithms
     return _outputUpdated;
   }
 
-  float PIDController::GetTime() const
-  {
-    return _time;
-  }
-
   float PIDController::GetDeltaTime() const
   {
     return _deltaTime;
@@ -47,6 +42,11 @@ namespace math::algorithms
   }
 
 #if KASYAK_FINDER
+  float PIDController::GetTime() const
+  {
+    return _time;
+  }
+
   float PIDController::GetInput() const
   {
     return _input;
@@ -101,8 +101,8 @@ namespace math::algorithms
   void PIDController::Process(float time, float value)
   {
     _outputUpdated = false;
-    _time = time;
 #if KASYAK_FINDER
+    _time = time;
     _input = value;
 #endif
     _deltaTime = time - _previousTime;
