@@ -285,6 +285,7 @@ void ntcErrorFlow();
 void WDT(uint16_t time, uint8_t current_function_uuid);
 void WDT_DISABLE();
 float optional_round(float value);
+void smart_delay(uint16_t time_ms);
 
 #ifdef SENSOR_BME280
 iDryer dryer(ntc, bme);
@@ -571,7 +572,7 @@ void setup()
         drawLine(printMenuItem(&serviceTxt[DEF_T_VER]), 3);
     } while (oled.nextPage());
 
-    delay(3000);
+    smart_delay(3000);
 
     fanOFF();
 
@@ -1087,9 +1088,9 @@ uint32_t readError()
 void piii(uint16_t time_ms)
 {
     digitalWrite(BUZZER_PIN, HIGH);
-    delay(time_ms);
+    smart_delay(time_ms);
     digitalWrite(BUZZER_PIN, LOW);
-    delay(time_ms);
+    smart_delay(time_ms);
 }
 
 void async_piii(uint16_t time_ms)
@@ -1191,7 +1192,7 @@ void pwm_test()
         while (k > 0)
         {
             fanOFF();
-            delay(2000);
+            smart_delay(2000);
             fanON(k);
             oled.clear();
             oled.firstPage();
@@ -1202,7 +1203,7 @@ void pwm_test()
                 snprintf(serviceString, sizeof(serviceString), "%4s %6hu", printMenuItem(&menuTxt[DEF_SETTINGS_BLOWING]), k);
                 drawLine(serviceString, 3);
             } while (oled.nextPage());
-            delay(3000);
+            smart_delay(3000);
             k -= 10;
         }
     }
@@ -1415,9 +1416,9 @@ void calculateHeaterOnDelay(float output)
 {
     heaterOnAngle = math::pi * (1.0f - sqrtf(output)); // Преобразуем выход PID в угол для фазового управления
 
-    auto delay = zeroImpusePeriodSec * heaterOnAngle / math::pi;                       // Вычисляем задержку включения нагревателя в секундах на основе угла и периода между пересечениями нуля
-    auto minDelay = static_cast<float>(HEATER_IMPULSE_OFFSET_US) / math::usCountInSec; // Минимальная задержка
-    auto maxDelay = zeroImpusePeriodSec - minDelay;                                    // Максимальная задержка
+    auto delay = zeroImpusePeriodSec * heaterOnAngle / math::pi;                                 // Вычисляем задержку включения нагревателя в секундах на основе угла и периода между пересечениями нуля
+    constexpr auto minDelay = static_cast<float>(HEATER_IMPULSE_OFFSET_US) / math::usCountInSec; // Минимальная задержка
+    auto maxDelay = zeroImpusePeriodSec - minDelay;                                              // Максимальная задержка
 
     heaterOnDelayUs = static_cast<uint16_t>(math::clamp(delay, minDelay, maxDelay) * math::usCountInSec); // Вычисляем задержку включения нагревателя в микросекундах
 }
@@ -1440,7 +1441,7 @@ void ntcErrorFlow()
     while (digitalRead(encBut))
     {
         async_piii(500);
-        delay(500);
+        smart_delay(500);
     }
 }
 
@@ -1613,7 +1614,7 @@ void autoPidFlow()
     if (servo.GetState() != CLOSED)
     {
         servo.Close();
-        delay(3000);
+        smart_delay(3000);
     }
 
     WDT_DISABLE();
@@ -1715,7 +1716,7 @@ void autoPidFlow()
 
     updateIDryerData();
 
-    delay(SCREEN_UPADATE_TIME);
+    smart_delay(SCREEN_UPADATE_TIME);
 
     subMenuM.levelUpdate = DOWN;
     subMenuM.pointerUpdate = 1;
@@ -1732,6 +1733,19 @@ float optional_round(float value)
 #else
     return value;
 #endif
+}
+
+void smart_delay(uint16_t time_ms)
+{
+    while (time_ms--)
+    {
+        // 1 ms ≈ 16000 тактов @ 16 МГц
+        // Один цикл for занимает ~4 такта
+        for (uint16_t i = 0; i < 4000; i++)
+        {
+            __asm__ __volatile__("nop");
+        }
+    }
 }
 
 #if SCALES_MODULE_NUM > 0
@@ -1764,7 +1778,7 @@ void setSpool(uint8_t spool)
             snprintf(serviceString, sizeof(serviceString), "%2d ", 5 - i);
             drawLine(serviceString, 4);
         } while (oled.nextPage());
-        delay(800);
+        smart_delay(800);
     }
 
     oled.firstPage();
@@ -1775,7 +1789,7 @@ void setSpool(uint8_t spool)
         snprintf(serviceString, sizeof(serviceString), "%s", printMenuItem(&serviceTxt[DEF_T_SETUP]));
         drawLine(serviceString, 3);
     } while (oled.nextPage());
-    delay(1000);
+    smart_delay(1000);
 
     zero_set_by_num(spool);
 
@@ -1794,7 +1808,7 @@ void setSpool(uint8_t spool)
             snprintf(serviceString, sizeof(serviceString), "%2d ", 10 - i);
             drawLine(serviceString, 4);
         } while (oled.nextPage());
-        delay(800);
+        smart_delay(800);
     }
 
     oled.firstPage();
@@ -1805,7 +1819,7 @@ void setSpool(uint8_t spool)
         snprintf(serviceString, sizeof(serviceString), "%s %1d", printMenuItem(&serviceTxt[DEF_T_SPOOL]), spool + 1);
         drawLine(serviceString, 3);
     } while (oled.nextPage());
-    delay(800);
+    smart_delay(800);
 
     offset_set_by_num(spool);
 
